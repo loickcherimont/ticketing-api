@@ -12,7 +12,6 @@ import dev.loickcherimont.ticketing_app.service.TicketService;
 
 @RestController
 @RequestMapping("/api/tickets")
-@CrossOrigin(origins = "*")
 public class TicketController {
 
     @Autowired
