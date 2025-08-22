@@ -60,6 +60,7 @@ public class TicketServiceImpl implements TicketService {
     public Ticket setTicketInProgress(Long id) {
         Ticket existingTicket = getTicketById(id);
         existingTicket.setStatus(TicketStatus.IN_PROGRESS);
+        existingTicket.setSolution("Ticket #" + existingTicket.getId() +" in progress");
         return ticketRepository.save(existingTicket);
     }
 
