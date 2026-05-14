@@ -69,4 +69,4 @@ curl -X PATCH http://localhost:8080/api/tickets/1/in-progress
 
 ## 🔑 License
 
-<div align="center">Copyright &copy; [Year] | Loick CHERIMONT | All Rights Reserved.</div>
+<div align="center">Copyright &copy; 2026 | Loick CHERIMONT | All Rights Reserved.</div>
