@@ -8,7 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import dev.loickcherimont.ticketing_app.model.Ticket;
-import dev.loickcherimont.ticketing_app.service.TicketService;
+import dev.loickcherimont.ticketing_app.services.TicketService;
 
 @RestController
 @RequestMapping("/api/tickets")

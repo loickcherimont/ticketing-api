@@ -1,4 +1,4 @@
-package dev.loickcherimont.ticketing_app.service.impl;
+package dev.loickcherimont.ticketing_app.services.impl;
 
 import java.util.List;
 import java.util.Optional;
@@ -10,7 +10,7 @@ import dev.loickcherimont.ticketing_app.exception.TicketNotFoundException;
 import dev.loickcherimont.ticketing_app.model.Ticket;
 import dev.loickcherimont.ticketing_app.model.TicketStatus;
 import dev.loickcherimont.ticketing_app.repository.TicketRepository;
-import dev.loickcherimont.ticketing_app.service.TicketService;
+import dev.loickcherimont.ticketing_app.services.TicketService;
 
 @Service
 public class TicketServiceImpl implements TicketService {
