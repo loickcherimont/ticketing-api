@@ -1,4 +1,4 @@
-package dev.loickcherimont.ticketing_app.configuration;
+package com.github.loickcherimont.ticketing_api.configuration;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
@@ -7,6 +7,9 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import io.micrometer.common.lang.NonNull;
 
+/**
+ * To enable CORS for RESTful Web API
+ */
 @Configuration
 @EnableWebMvc
 public class WebConfig implements WebMvcConfigurer {

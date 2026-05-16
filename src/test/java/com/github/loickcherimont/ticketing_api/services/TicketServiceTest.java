@@ -1,4 +1,4 @@
-package dev.loickcherimont.ticketing_app.services;
+package com.github.loickcherimont.ticketing_api.services;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -11,11 +11,12 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import dev.loickcherimont.ticketing_app.exception.TicketNotFoundException;
-import dev.loickcherimont.ticketing_app.model.Ticket;
-import dev.loickcherimont.ticketing_app.model.TicketStatus;
-import dev.loickcherimont.ticketing_app.repository.TicketRepository;
-import dev.loickcherimont.ticketing_app.services.impl.TicketServiceImpl;
+
+import com.github.loickcherimont.ticketing_api.exceptions.TicketNotFoundException;
+import com.github.loickcherimont.ticketing_api.models.Ticket;
+import com.github.loickcherimont.ticketing_api.models.TicketStatus;
+import com.github.loickcherimont.ticketing_api.repository.TicketRepository;
+import com.github.loickcherimont.ticketing_api.services.impl.TicketServiceImpl;
 
 @ExtendWith(MockitoExtension.class)
 public class TicketServiceTest {

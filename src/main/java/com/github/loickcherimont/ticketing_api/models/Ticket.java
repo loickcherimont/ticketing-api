@@ -1,4 +1,4 @@
-package dev.loickcherimont.ticketing_app.model;
+package com.github.loickcherimont.ticketing_api.models;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -9,14 +9,17 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
-@Data
-@AllArgsConstructor
-@NoArgsConstructor
+
 @Entity
 @Table(name = "tickets")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 public class Ticket {
 
     @Id
@@ -33,5 +36,5 @@ public class Ticket {
     private TicketStatus status;
 
     @Column(columnDefinition = "TEXT")
-    private String solution; //  Null until the ticket is closed
+    private String solution;
 }
