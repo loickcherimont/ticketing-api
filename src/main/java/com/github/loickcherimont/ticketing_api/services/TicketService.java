@@ -1,14 +1,13 @@
-package dev.loickcherimont.ticketing_app.services;
+package com.github.loickcherimont.ticketing_api.services;
 
 import java.util.List;
 
-import dev.loickcherimont.ticketing_app.model.Ticket;
+import com.github.loickcherimont.ticketing_api.models.Ticket;
 
 public interface TicketService {
     List<Ticket> getAllTickets();
     Ticket getTicketById(Long id);
     Ticket createTicket(Ticket ticket);
-    // Ticket updateTicket(Long id, Ticket ticket);
     Ticket solveTicket(Long id, String solution);
     Ticket setTicketInProgress(Long id);
 }

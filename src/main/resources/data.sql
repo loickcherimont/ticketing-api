@@ -1,7 +1,6 @@
+-- FAKE DATA:
 -- Insert 3 tickets for the banking application
 -- Execute this in your H2 database
-
--- DROP TABLE IF EXISTS tickets;
 
 INSERT INTO tickets (title, description, status, solution) 
 VALUES (
