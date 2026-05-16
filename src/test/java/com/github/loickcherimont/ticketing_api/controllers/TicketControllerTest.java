@@ -1,4 +1,4 @@
-package dev.loickcherimont.ticketing_app.controllers;
+package com.github.loickcherimont.ticketing_api.controllers;
 
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -11,11 +11,10 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-import dev.loickcherimont.ticketing_app.controller.TicketController;
-import dev.loickcherimont.ticketing_app.exception.TicketNotFoundException;
-import dev.loickcherimont.ticketing_app.model.Ticket;
-import dev.loickcherimont.ticketing_app.model.TicketStatus;
-import dev.loickcherimont.ticketing_app.services.TicketService;
+import com.github.loickcherimont.ticketing_api.exceptions.TicketNotFoundException;
+import com.github.loickcherimont.ticketing_api.models.Ticket;
+import com.github.loickcherimont.ticketing_api.models.TicketStatus;
+import com.github.loickcherimont.ticketing_api.services.TicketService;
 
 @WebMvcTest(TicketController.class)
 public class TicketControllerTest {

@@ -47,8 +47,8 @@ cd ticketing-api
 curl -X POST http://localhost:8080/api/tickets \
   -H "Content-Type: application/json" \
   -d '{
-    "title": "Database Connection Issue",
-    "description": "Unable to connect to the database",
+    "title": "Problème de connexion à la base de données",
+    "description": "Impossible de se connecter à la base de données",
     "status": "OPEN"
   }'
 ```
@@ -58,7 +58,7 @@ curl -X POST http://localhost:8080/api/tickets \
 curl -X PATCH http://localhost:8080/api/tickets/1/solve \
   -H "Content-Type: application/json" \
   -d '{
-    "solution": "Updated database configuration and restarted the service"
+    "solution": "Configuration de la base de données mise à jour et service redémarré"
   }'
 ```
 
