@@ -1,4 +1,4 @@
-package dev.loickcherimont.ticketing_app;
+package com.github.loickcherimont.ticketing_api;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

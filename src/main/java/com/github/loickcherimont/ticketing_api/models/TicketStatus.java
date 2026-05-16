@@ -1,4 +1,4 @@
-package dev.loickcherimont.ticketing_app.model;
+package com.github.loickcherimont.ticketing_api.models;
 
 public enum TicketStatus {
     OPEN,
