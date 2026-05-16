@@ -1,4 +1,4 @@
-package dev.loickcherimont.ticketing_app.service;
+package dev.loickcherimont.ticketing_app.services;
 
 import java.util.List;
 
