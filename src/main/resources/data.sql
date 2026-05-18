@@ -2,26 +2,24 @@
 -- Insert 3 tickets for the banking application
 -- Execute this in your H2 database
 
-INSERT INTO tickets (title, description, status, solution) 
-VALUES (
-    'Mobile app login failed',
-    'Customer cannot log into the mobile application since this morning. Error message: "Invalid credentials" even though the credentials work fine on the website.',
-    'OPEN',
-    NULL
-);
-
-INSERT INTO tickets (title, description, status, solution) 
-VALUES (
-    'Wire transfer blocked by fraud',
-    'Wire transfer of €15,000 automatically blocked by the anti-fraud system. Customer wants to make this transfer to buy a car. Supporting documents have been provided.',
-    'IN_PROGRESS',
-    NULL
-);
-
-INSERT INTO tickets (title, description, status, solution) 
-VALUES (
-    'Card swallowed by ATM Nantes',
-    'Customer''s bank card was swallowed by the ATM at Nantes Centre branch. Customer was making a €200 withdrawal. Card needs to be retrieved and new card ordered.',
-    'CLOSED',
-    'Card retrieved from ATM provider. New card ordered and shipped to customer''s address. Expected delivery: 3-5 business days. Previous PIN reactivated on new card.'
+INSERT INTO 
+    tickets (title, description, status, solution) 
+VALUES
+(
+  'Échec de connexion à l''application mobile',
+  'Le client ne peut plus se connecter à l''application mobile depuis ce matin. Message d''erreur : "Identifiants invalides", alors que les identifiants fonctionnent sur le site web.',
+  'OPEN',
+  NULL
+),
+(
+  'Virement bloqué par le système antifraude',
+  'Un virement de 15 000 € a été automatiquement bloqué par le système antifraude. Le client souhaite effectuer ce transfert pour acheter une voiture. Les justificatifs ont été fournis.',
+  'IN_PROGRESS',
+  NULL
+),
+(
+  'Carte avalée par un distributeur à Nantes',
+  'La carte bancaire du client a été avalée par le distributeur automatique de billets de l''agence Nantes Centre. Le client retirait 200 €. La carte doit être récupérée et une nouvelle carte commandée.',
+  'CLOSED',
+  'Carte récupérée auprès de l''opérateur du DAB. Nouvelle carte commandée et envoyée à l''adresse du client. Délai de livraison estimé : 3 à 5 jours ouvrés. Le code PIN précédent a été réactivé sur la nouvelle carte.'
 );
