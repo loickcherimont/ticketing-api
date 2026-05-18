@@ -3,6 +3,8 @@ package com.github.loickcherimont.ticketing_api.services.impl;
 import java.util.List;
 import org.springframework.stereotype.Service;
 
+import com.github.loickcherimont.ticketing_api.dto.SolutionRequestDto;
+import com.github.loickcherimont.ticketing_api.dto.TicketRequestDto;
 import com.github.loickcherimont.ticketing_api.exceptions.TicketNotFoundException;
 import com.github.loickcherimont.ticketing_api.models.Ticket;
 import com.github.loickcherimont.ticketing_api.models.TicketStatus;
@@ -38,13 +40,20 @@ public class TicketServiceImpl implements TicketService {
     /**
      * Create and save ticket in database.
      *
-     * @param ticket Ticket informations
+     * @param ticketRequestDto Ticket informations from client
      * 
      * @return The new created ticket
      */
     @Override
-    public Ticket createTicket(Ticket ticket) {
-        return ticketRepository.save(ticket);
+    public Ticket createTicket(TicketRequestDto ticketRequestDto) {
+
+        Ticket newTicket = new Ticket();
+
+        newTicket.setTitle(ticketRequestDto.title().trim());
+        newTicket.setDescription(ticketRequestDto.description().trim());
+        newTicket.setStatus(TicketStatus.OPEN);
+
+        return ticketRepository.save(newTicket);
     }
 
     /**
@@ -55,15 +64,15 @@ public class TicketServiceImpl implements TicketService {
      * </p>
      *
      * @param id       Ticket identifier
-     * @param solution Solution attached to the ticket
+     * @param solutionRequestDto Object containing the attached solution to the ticket
      *
      * @return The updated ticket with the provided solution and {@code CLOSED}
      *         status
      */
     @Override
-    public Ticket solveTicket(Long id, String solution) {
+    public Ticket solveTicket(Long id, SolutionRequestDto solutionRequestDto) {
         Ticket existingTicket = getTicketById(id);
-        existingTicket.setSolution(solution);
+        existingTicket.setSolution(solutionRequestDto.solution().trim());
         existingTicket.setStatus(TicketStatus.CLOSED);
         return ticketRepository.save(existingTicket);
     }

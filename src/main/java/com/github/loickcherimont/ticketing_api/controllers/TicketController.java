@@ -10,6 +10,8 @@ import com.github.loickcherimont.ticketing_api.services.TicketService;
 
 import lombok.RequiredArgsConstructor;
 
+import com.github.loickcherimont.ticketing_api.dto.SolutionRequestDto;
+import com.github.loickcherimont.ticketing_api.dto.TicketRequestDto;
 import com.github.loickcherimont.ticketing_api.models.Ticket;
 
 @RestController
@@ -42,13 +44,13 @@ public class TicketController {
      * The ticket is created from the request body and persisted in the database.
      * </p>
      *
-     * @param ticket ticket data sent by the client
+     * @param ticketRequestDto ticket data sent by the client
      * @return ResponseEntity containing the created ticket and
      *         {@code HTTP 201 CREATED status}
      */
     @PostMapping
-    public ResponseEntity<Ticket> createTicket(@RequestBody Ticket ticket) {
-        Ticket created = ticketService.createTicket(ticket);
+    public ResponseEntity<Ticket> createTicket(@RequestBody TicketRequestDto ticketRequestDto) {
+        Ticket created = ticketService.createTicket(ticketRequestDto);
         return ResponseEntity
                 .created(URI.create("/api/tickets/" + created.getId()))
                 .body(created);
@@ -58,12 +60,12 @@ public class TicketController {
      * Mark a ticket as solved and attach a solution.
      *
      * @param id      ticket identifier
-     * @param request request body containing the solution text
+     * @param solutionRequestDto request body containing the solution text
      * @return updated ticket with status {@code SOLVED}
      */
     @PatchMapping("/{id}/solve")
-    public ResponseEntity<Ticket> solveTicket(@PathVariable Long id, @RequestBody SolveTicketRequest request) {
-        return ResponseEntity.ok(ticketService.solveTicket(id, request.getSolution()));
+    public ResponseEntity<Ticket> solveTicket(@PathVariable Long id, @RequestBody SolutionRequestDto solutionRequestDto) {
+        return ResponseEntity.ok(ticketService.solveTicket(id, solutionRequestDto));
     }
 
     /**
@@ -75,21 +77,5 @@ public class TicketController {
     @PatchMapping("/{id}/in-progress")
     public ResponseEntity<Ticket> setTicketInProgress(@PathVariable Long id) {
         return ResponseEntity.ok(ticketService.setTicketInProgress(id));
-    }
-
-    /**
-     * Inner class for the solve ticket request
-     * To avoid the access to other fields than solution.
-     */
-    public static class SolveTicketRequest {
-        private String solution;
-
-        public String getSolution() {
-            return solution;
-        }
-
-        public void setSolution(String solution) {
-            this.solution = solution;
-        }
     }
 }
