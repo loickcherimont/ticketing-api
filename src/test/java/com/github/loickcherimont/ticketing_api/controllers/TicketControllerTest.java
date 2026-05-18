@@ -20,6 +20,8 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.loickcherimont.ticketing_api.dto.SolutionRequestDto;
+import com.github.loickcherimont.ticketing_api.dto.TicketRequestDto;
 import com.github.loickcherimont.ticketing_api.exceptions.TicketNotFoundException;
 import com.github.loickcherimont.ticketing_api.models.Ticket;
 import com.github.loickcherimont.ticketing_api.models.TicketStatus;
@@ -129,7 +131,7 @@ public class TicketControllerTest {
                                 TicketStatus.OPEN,
                                 null);
 
-                when(ticketService.createTicket(any(Ticket.class))).thenReturn(savedTicket);
+                when(ticketService.createTicket(any(TicketRequestDto.class))).thenReturn(savedTicket);
 
                 this.mockMvc.perform(
                                 post("/api/tickets")
@@ -143,7 +145,7 @@ public class TicketControllerTest {
                                 .andExpect(jsonPath("$.status").value(TicketStatus.OPEN.name()))
                                 .andExpect(jsonPath("$.solution").isEmpty());
 
-                verify(ticketService).createTicket(any(Ticket.class));
+                verify(ticketService).createTicket(any(TicketRequestDto.class));
 
         }
 
@@ -160,24 +162,21 @@ public class TicketControllerTest {
                                 TicketStatus.CLOSED,
                                 "Le virement SEPA a été localisé en cours de traitement. Un délai supplémentaire de 24 à 48 heures est nécessaire en raison d'un contrôle de conformité. Le client sera notifié dès que les fonds seront crédités sur son compte courant.");
 
-                TicketController.SolveTicketRequest solveTicketRequest = new TicketController.SolveTicketRequest();
+                SolutionRequestDto solutionRequestDto = new SolutionRequestDto("             Le virement SEPA a été localisé en cours de traitement. Un délai supplémentaire de 24 à 48 heures est nécessaire en raison d'un contrôle de conformité. Le client sera notifié dès que les fonds seront crédités sur son compte courant.     ");
 
-                solveTicketRequest.setSolution(
-                                "Le virement SEPA a été localisé en cours de traitement. Un délai supplémentaire de 24 à 48 heures est nécessaire en raison d'un contrôle de conformité. Le client sera notifié dès que les fonds seront crédités sur son compte courant.");
-
-                when(ticketService.solveTicket(2L, solveTicketRequest.getSolution())).thenReturn(savedTicket);
+                when(ticketService.solveTicket(2L, solutionRequestDto)).thenReturn(savedTicket);
 
                 this.mockMvc.perform(
                                 patch("/api/tickets/2/solve")
                                                 .contentType(MediaType.APPLICATION_JSON)
-                                                .content(objectMapper.writeValueAsString(solveTicketRequest)))
+                                                .content(objectMapper.writeValueAsString(solutionRequestDto)))
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.id").value(2L))
                                 .andExpect(jsonPath("$.status").value(TicketStatus.CLOSED.name()))
                                 .andExpect(jsonPath("$.solution").value(
                                                 "Le virement SEPA a été localisé en cours de traitement. Un délai supplémentaire de 24 à 48 heures est nécessaire en raison d'un contrôle de conformité. Le client sera notifié dès que les fonds seront crédités sur son compte courant."));
 
-                verify(ticketService).solveTicket(2L, solveTicketRequest.getSolution());
+                verify(ticketService).solveTicket(2L, solutionRequestDto);
 
         }
 
