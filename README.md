@@ -67,6 +67,10 @@ curl -X PATCH http://localhost:8080/api/tickets/1/solve \
 curl -X PATCH http://localhost:8080/api/tickets/1/in-progress
 ```
 
+## 📄 API Documentation
+
+![Preview API documentation](.github/endpoints-docs.png 'API docs with Swagger UI | Ticket API')
+
 ## 🔑 License
 
 <div align="center">Copyright &copy; 2026 | Loick CHERIMONT | All Rights Reserved.</div>
