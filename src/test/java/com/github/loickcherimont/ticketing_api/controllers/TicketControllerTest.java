@@ -44,6 +44,46 @@ public class TicketControllerTest {
         private TicketService ticketService;
 
         @Test
+        void shouldReturnCreated201WithNewTicket() throws Exception {
+
+                /**
+                 * Ticket informations from client
+                 */
+                Ticket ticket = new Ticket(null,
+                                "Virement bancaire non reçu",
+                                "Le client indique qu’un virement SEPA effectué il y a 72 heures n’apparaît toujours pas sur son compte courant.",
+                                TicketStatus.OPEN,
+                                null);
+
+                /**
+                 * Simulated ticket found in fake database
+                 */
+                Ticket savedTicket = new Ticket(
+                                2L,
+                                "Virement bancaire non reçu",
+                                "Le client indique qu’un virement SEPA effectué il y a 72 heures n’apparaît toujours pas sur son compte courant.",
+                                TicketStatus.OPEN,
+                                null);
+
+                when(ticketService.createTicket(any(TicketRequestDto.class))).thenReturn(savedTicket);
+
+                this.mockMvc.perform(
+                                post("/api/tickets")
+                                                .contentType(MediaType.APPLICATION_JSON)
+                                                .content(objectMapper.writeValueAsString(ticket)))
+                                .andExpect(status().isCreated())
+                                .andExpect(jsonPath("$.id").value(2L))
+                                .andExpect(jsonPath("$.title").value("Virement bancaire non reçu"))
+                                .andExpect(jsonPath("$.description").value(
+                                                "Le client indique qu’un virement SEPA effectué il y a 72 heures n’apparaît toujours pas sur son compte courant."))
+                                .andExpect(jsonPath("$.status").value(TicketStatus.OPEN.name()))
+                                .andExpect(jsonPath("$.solution").isEmpty());
+
+                verify(ticketService).createTicket(any(TicketRequestDto.class));
+
+        }
+
+        @Test
         void shouldReturnOk200WithAllTickets() throws Exception {
 
                 List<Ticket> tickets = List.of(
@@ -85,7 +125,6 @@ public class TicketControllerTest {
                                 .andExpect(jsonPath("$[0].status").exists())
                                 .andExpect(jsonPath("$[0].solution").isEmpty());
 
-
                 verify(ticketService).getAllTickets();
 
         }
@@ -110,46 +149,6 @@ public class TicketControllerTest {
         }
 
         @Test
-        void shouldReturnCreated201WithNewTicket() throws Exception {
-
-                /**
-                 * Ticket informations from client
-                 */
-                Ticket ticket = new Ticket(null,
-                                "Virement bancaire non reçu",
-                                "Le client indique qu’un virement SEPA effectué il y a 72 heures n’apparaît toujours pas sur son compte courant.",
-                                TicketStatus.OPEN,
-                                null);
-
-                /**
-                 * Simulated ticket found in fake database
-                 */
-                Ticket savedTicket = new Ticket(
-                                2L,
-                                "Virement bancaire non reçu",
-                                "Le client indique qu’un virement SEPA effectué il y a 72 heures n’apparaît toujours pas sur son compte courant.",
-                                TicketStatus.OPEN,
-                                null);
-
-                when(ticketService.createTicket(any(TicketRequestDto.class))).thenReturn(savedTicket);
-
-                this.mockMvc.perform(
-                                post("/api/tickets")
-                                                .contentType(MediaType.APPLICATION_JSON)
-                                                .content(objectMapper.writeValueAsString(ticket)))
-                                .andExpect(status().isCreated())
-                                .andExpect(jsonPath("$.id").value(2L))
-                                .andExpect(jsonPath("$.title").value("Virement bancaire non reçu"))
-                                .andExpect(jsonPath("$.description").value(
-                                                "Le client indique qu’un virement SEPA effectué il y a 72 heures n’apparaît toujours pas sur son compte courant."))
-                                .andExpect(jsonPath("$.status").value(TicketStatus.OPEN.name()))
-                                .andExpect(jsonPath("$.solution").isEmpty());
-
-                verify(ticketService).createTicket(any(TicketRequestDto.class));
-
-        }
-
-        @Test
         void shouldReturnOk200WithSolvedAndClosedTicket() throws Exception {
 
                 /**
@@ -162,7 +161,8 @@ public class TicketControllerTest {
                                 TicketStatus.CLOSED,
                                 "Le virement SEPA a été localisé en cours de traitement. Un délai supplémentaire de 24 à 48 heures est nécessaire en raison d'un contrôle de conformité. Le client sera notifié dès que les fonds seront crédités sur son compte courant.");
 
-                SolutionRequestDto solutionRequestDto = new SolutionRequestDto("             Le virement SEPA a été localisé en cours de traitement. Un délai supplémentaire de 24 à 48 heures est nécessaire en raison d'un contrôle de conformité. Le client sera notifié dès que les fonds seront crédités sur son compte courant.     ");
+                SolutionRequestDto solutionRequestDto = new SolutionRequestDto(
+                                "             Le virement SEPA a été localisé en cours de traitement. Un délai supplémentaire de 24 à 48 heures est nécessaire en raison d'un contrôle de conformité. Le client sera notifié dès que les fonds seront crédités sur son compte courant.     ");
 
                 when(ticketService.solveTicket(2L, solutionRequestDto)).thenReturn(savedTicket);
 
