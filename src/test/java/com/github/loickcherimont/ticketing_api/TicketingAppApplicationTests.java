@@ -7,7 +7,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 class TicketingAppApplicationTests {
 
 	@Test
-	void contextLoads() {
+	void contextLoads() throws Exception {
 	}
 
 }
