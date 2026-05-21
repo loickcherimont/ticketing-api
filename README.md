@@ -42,34 +42,13 @@ cd ticketing-api
 | `PATCH` | `/api/tickets/{id}/solve` | Solve ticket with solution |
 | `PATCH` | `/api/tickets/{id}/in-progress` | Set ticket in progress |
 
-### Create a Ticket
-```bash
-curl -X POST http://localhost:8080/api/tickets \
-  -H "Content-Type: application/json" \
-  -d '{
-    "title": "Problème de connexion à la base de données",
-    "description": "Impossible de se connecter à la base de données",
-    "status": "OPEN"
-  }'
-```
-
-### Solve a Ticket
-```bash
-curl -X PATCH http://localhost:8080/api/tickets/1/solve \
-  -H "Content-Type: application/json" \
-  -d '{
-    "solution": "Configuration de la base de données mise à jour et service redémarré"
-  }'
-```
-
-### Set Ticket In Progress
-```bash
-curl -X PATCH http://localhost:8080/api/tickets/1/in-progress
-```
-
 ## 📄 API Documentation
 
+Try the Swagger UI here : https://ticketing-api-production-92ac.up.railway.app/swagger-ui/index.html
+
 ![Preview API documentation](.github/endpoints-docs.png 'API docs with Swagger UI | Ticket API')
+
+
 
 ## 🔑 License
 
