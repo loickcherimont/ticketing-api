@@ -1,5 +1,6 @@
 package com.github.loickcherimont.ticketing_api.configuration;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
@@ -17,11 +18,14 @@ import io.swagger.v3.oas.models.info.Info;
 @EnableWebMvc
 public class WebConfig implements WebMvcConfigurer {
 
+    @Value("${cors.allowed-origins}")
+    private String[] allowedOrigins;
+
     @Override
     public void addCorsMappings(@NonNull CorsRegistry registry) {
         registry.addMapping("/api/**")
                 .allowedMethods("GET", "POST", "PATCH", "OPTIONS")
-                .allowedOrigins("http://localhost:5173");
+                .allowedOrigins(allowedOrigins);
     }
 
     /**
