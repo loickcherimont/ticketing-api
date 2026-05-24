@@ -2,7 +2,6 @@ package com.github.loickcherimont.ticketing_api.services.impl;
 
 import java.util.List;
 import org.springframework.stereotype.Service;
-
 import com.github.loickcherimont.ticketing_api.dto.SolutionRequestDto;
 import com.github.loickcherimont.ticketing_api.dto.TicketRequestDto;
 import com.github.loickcherimont.ticketing_api.exceptions.TicketNotFoundException;
@@ -46,6 +45,10 @@ public class TicketServiceImpl implements TicketService {
      */
     @Override
     public Ticket createTicket(TicketRequestDto ticketRequestDto) {
+
+        /** todo: verify the title is not exists */
+
+        /** todo: clean data */
 
         Ticket newTicket = new Ticket();
 

@@ -12,6 +12,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 import com.github.loickcherimont.ticketing_api.dto.SolutionRequestDto;
@@ -30,17 +31,21 @@ public class TicketController {
      * Create a new ticket.
      *
      * <p>
-     * The ticket is created from the request body and persisted in the database.
+     * The ticket is created from the valid request body and persisted in the database.
      * </p>
+     * <p>If the request body is invalid, return a responseEntity containing fields with errors and HTTP 400 Bad Request.</p>
      *
      * @param ticketRequestDto ticket data sent by the client
      * @return ResponseEntity containing the created ticket and
-     *         {@code HTTP 201 CREATED status}
+     *         {@code HTTP 201 Created}
+     * @throws Exception ResponseEntity containing the fields with errors and
+     *         {@code HTTP 400 Bad Request}
      */
     @Operation(summary = "Create a ticket", description = "Create a new ticket using `ticketRequestDto` fields and save it to database")
+    @ApiResponse(responseCode = "400", description = "Bad request: Ticket blank")
     @ApiResponse(responseCode = "201", description = "Ticket created with success")
     @PostMapping
-    public ResponseEntity<Ticket> createTicket(@RequestBody TicketRequestDto ticketRequestDto) {
+    public ResponseEntity<Ticket> createTicket(@Valid @RequestBody TicketRequestDto ticketRequestDto) {
         Ticket created = ticketService.createTicket(ticketRequestDto);
         return ResponseEntity
                 .created(URI.create("/api/tickets/" + created.getId()))
