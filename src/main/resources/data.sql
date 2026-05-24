@@ -1,6 +1,5 @@
--- FAKE DATA:
+-- FAKE DATA for PostgreSQL:
 -- Insert 3 tickets for the banking application
--- Execute this in your H2 database
 
 INSERT INTO 
     tickets (title, description, status, solution) 
