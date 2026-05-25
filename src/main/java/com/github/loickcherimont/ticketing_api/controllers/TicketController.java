@@ -31,19 +31,20 @@ public class TicketController {
      * Create a new ticket.
      *
      * <p>
-     * The ticket is created from the valid request body and persisted in the database.
+     * The ticket is created from the valid request body and persisted in the
+     * database.
      * </p>
-     * <p>If the request body is invalid, return a responseEntity containing fields with errors and HTTP 400 Bad Request.</p>
      *
      * @param ticketRequestDto ticket data sent by the client
      * @return ResponseEntity containing the created ticket and
      *         {@code HTTP 201 Created}
      * @throws Exception ResponseEntity containing the fields with errors and
-     *         {@code HTTP 400 Bad Request}
+     *                   {@code HTTP 400 Bad Request}
      */
     @Operation(summary = "Create a ticket", description = "Create a new ticket using `ticketRequestDto` fields and save it to database")
-    @ApiResponse(responseCode = "400", description = "Bad request: Ticket blank")
     @ApiResponse(responseCode = "201", description = "Ticket created with success")
+    @ApiResponse(responseCode = "400", description = "Blank or invalid fields")
+    @ApiResponse(responseCode = "409", description = "Ticket with same title already exists")
     @PostMapping
     public ResponseEntity<Ticket> createTicket(@Valid @RequestBody TicketRequestDto ticketRequestDto) {
         Ticket created = ticketService.createTicket(ticketRequestDto);
@@ -67,6 +68,7 @@ public class TicketController {
      */
     @Operation(summary = "Get ticket by id", description = "Get a specific ticket by its `id`")
     @ApiResponse(responseCode = "200", description = "Ticket retrieved by `id`")
+    @ApiResponse(responseCode = "404", description = "Ticket with specified `id` not found")
     @GetMapping("/{id}")
     public ResponseEntity<Ticket> getTicketById(@Parameter(description = "`id` of ticket") @PathVariable Long id) {
         return ResponseEntity.ok(ticketService.getTicketById(id));
@@ -81,9 +83,10 @@ public class TicketController {
      */
     @Operation(summary = "Solve ticket by id", description = "Add a solution for target ticket")
     @ApiResponse(responseCode = "200", description = "Ticket solved")
+    @ApiResponse(responseCode = "400", description = "Ticket with invalid solution")
     @PatchMapping("/{id}/solve")
     public ResponseEntity<Ticket> solveTicket(@PathVariable Long id,
-            @RequestBody SolutionRequestDto solutionRequestDto) {
+            @Valid @RequestBody SolutionRequestDto solutionRequestDto) {
         return ResponseEntity.ok(ticketService.solveTicket(id, solutionRequestDto));
     }
 
@@ -95,6 +98,8 @@ public class TicketController {
      */
     @Operation(summary = "Set ticket in progress", description = "Change ticket status to IN_PROGRESS")
     @ApiResponse(responseCode = "200", description = "Ticket in progress")
+    @ApiResponse(responseCode = "400", description = "Blank or invalid fields")
+    @ApiResponse(responseCode = "409", description = "Ticket with same title already exists")
     @PatchMapping("/{id}/in-progress")
     public ResponseEntity<Ticket> setTicketInProgress(@PathVariable Long id) {
         return ResponseEntity.ok(ticketService.setTicketInProgress(id));

@@ -7,4 +7,6 @@ import com.github.loickcherimont.ticketing_api.models.Ticket;
 
 
 @Repository 
-public interface TicketRepository extends JpaRepository <Ticket, Long> {}
+public interface TicketRepository extends JpaRepository <Ticket, Long> {
+    boolean existsByTitle(String title);
+}

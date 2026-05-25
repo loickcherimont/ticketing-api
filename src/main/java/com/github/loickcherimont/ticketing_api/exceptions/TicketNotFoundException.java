@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 /**
  * Runtime child class used for not found ticket identifier.<br />
  * 
- * We use {@code @ResponseStatus} to transform the exception into {@code HTTP 404 NOT FOUND status}
+ * We use {@code @ResponseStatus} to transform the exception into {@code HTTP 404 Not Found}
  */
 @ResponseStatus(HttpStatus.NOT_FOUND)
 public class TicketNotFoundException extends RuntimeException {

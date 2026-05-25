@@ -14,7 +14,7 @@ public class GlobalExceptionHandler {
     /**
      * 
      * @param ex Exception
-     * @return ResponseEntity containing fields with each error messages and {@code HTTP 400 BAD REQUEST status}
+     * @return ResponseEntity containing fields with each error messages
      */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, String>> handleValidation(MethodArgumentNotValidException ex) {
