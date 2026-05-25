@@ -4,6 +4,7 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import com.github.loickcherimont.ticketing_api.dto.SolutionRequestDto;
 import com.github.loickcherimont.ticketing_api.dto.TicketRequestDto;
+import com.github.loickcherimont.ticketing_api.exceptions.TicketExistingTitleException;
 import com.github.loickcherimont.ticketing_api.exceptions.TicketNotFoundException;
 import com.github.loickcherimont.ticketing_api.models.Ticket;
 import com.github.loickcherimont.ticketing_api.models.TicketStatus;
@@ -46,9 +47,9 @@ public class TicketServiceImpl implements TicketService {
     @Override
     public Ticket createTicket(TicketRequestDto ticketRequestDto) {
 
-        /** todo: verify the title is not exists */
-
-        /** todo: clean data */
+        if (ticketRepository.existsByTitle(ticketRequestDto.title().trim())) {
+            throw new TicketExistingTitleException("This title exists, try another one.");
+        }
 
         Ticket newTicket = new Ticket();
 
@@ -66,8 +67,9 @@ public class TicketServiceImpl implements TicketService {
      * Once solved, the ticket status is automatically set to {@code CLOSED}.
      * </p>
      *
-     * @param id       Ticket identifier
-     * @param solutionRequestDto Object containing the attached solution to the ticket
+     * @param id                 Ticket identifier
+     * @param solutionRequestDto Object containing the attached solution to the
+     *                           ticket
      *
      * @return The updated ticket with the provided solution and {@code CLOSED}
      *         status
@@ -81,7 +83,8 @@ public class TicketServiceImpl implements TicketService {
     }
 
     /**
-     * Change ticket status and solution to {@code IN_PROGRESS} and saving the update in database.
+     * Change ticket status and solution to {@code IN_PROGRESS} and saving the
+     * update in database.
      *
      * @param id Ticket identifier
      *
