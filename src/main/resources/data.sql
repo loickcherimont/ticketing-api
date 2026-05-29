@@ -28,5 +28,5 @@ VALUES
 INSERT INTO
   users(email, password, role)
 VALUES
-    (1, 'john.doe@gmail.com', '$2a$10$2Fi5IhQGUl3UOovID2Cr/ucMTOvTaw0I1nLD5seAZhKJGrCeToJxu', 'ROLE_USER'),
-    (2, 'agent@company.com', '$2a$10$/iHBuawtih6pnOiWOR9UJeQgvZxuKuRT1dDP2OEnC0wDrcYBnU1Le', 'ROLE_AGENT');
+    ('john.doe@gmail.com', '$2a$10$ZCkYIwrSw8t2mi3klTFKeu9y.jjWABOnWPwbZUlkwTVzc1oQtjGou', 'USER'),
+    ('agent@company.com', '$2a$10$xtGnHBCYKz3KvMRQmt4fmOplvodVpPxSaE4vL9ijLn4RHFwxZWRBu', 'AGENT');
