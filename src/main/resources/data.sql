@@ -22,3 +22,11 @@ VALUES
   'CLOSED',
   'Carte récupérée auprès de l''opérateur du DAB. Nouvelle carte commandée et envoyée à l''adresse du client. Délai de livraison estimé : 3 à 5 jours ouvrés. Le code PIN précédent a été réactivé sur la nouvelle carte.'
 );
+
+-- FAKE DATA for PostgreSQL:
+-- Insert 1 user and 1 agent for the banking application
+INSERT INTO
+  users(email, password, role)
+VALUES
+    ('john.doe@gmail.com', '$2a$10$ZCkYIwrSw8t2mi3klTFKeu9y.jjWABOnWPwbZUlkwTVzc1oQtjGou', 'USER'),
+    ('agent@company.com', '$2a$10$xtGnHBCYKz3KvMRQmt4fmOplvodVpPxSaE4vL9ijLn4RHFwxZWRBu', 'AGENT');

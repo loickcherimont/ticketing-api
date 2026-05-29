@@ -11,6 +11,7 @@ import com.github.loickcherimont.ticketing_api.services.TicketService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -84,7 +85,8 @@ public class TicketController {
     @Operation(summary = "Solve ticket by id", description = "Add a solution for target ticket")
     @ApiResponse(responseCode = "200", description = "Ticket solved")
     @ApiResponse(responseCode = "400", description = "Ticket with invalid solution")
-    @PatchMapping("/{id}/solve")
+    @SecurityRequirement(name = "bearerAuth")
+    @PatchMapping("/agent/{id}/solve")
     public ResponseEntity<Ticket> solveTicket(@PathVariable Long id,
             @Valid @RequestBody SolutionRequestDto solutionRequestDto) {
         return ResponseEntity.ok(ticketService.solveTicket(id, solutionRequestDto));
@@ -100,7 +102,8 @@ public class TicketController {
     @ApiResponse(responseCode = "200", description = "Ticket in progress")
     @ApiResponse(responseCode = "400", description = "Blank or invalid fields")
     @ApiResponse(responseCode = "409", description = "Ticket with same title already exists")
-    @PatchMapping("/{id}/in-progress")
+    @SecurityRequirement(name = "bearerAuth")
+    @PatchMapping("/agent/{id}/in-progress")
     public ResponseEntity<Ticket> setTicketInProgress(@PathVariable Long id) {
         return ResponseEntity.ok(ticketService.setTicketInProgress(id));
     }
