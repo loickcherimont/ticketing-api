@@ -13,25 +13,33 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import java.util.List;
 import java.util.stream.Stream;
 
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.loickcherimont.ticketing_api.configuration.SecurityConfig;
 import com.github.loickcherimont.ticketing_api.dto.SolutionRequestDto;
 import com.github.loickcherimont.ticketing_api.dto.TicketRequestDto;
 import com.github.loickcherimont.ticketing_api.exceptions.TicketNotFoundException;
 import com.github.loickcherimont.ticketing_api.models.Ticket;
 import com.github.loickcherimont.ticketing_api.models.TicketStatus;
+import com.github.loickcherimont.ticketing_api.services.JwtService;
 import com.github.loickcherimont.ticketing_api.services.TicketService;
 
 @WebMvcTest(TicketController.class)
+@Import(SecurityConfig.class)
 public class TicketControllerTest {
 
 	@Autowired
@@ -47,17 +55,27 @@ public class TicketControllerTest {
 	@MockitoBean
 	private TicketService ticketService;
 
+	@MockitoBean
+	private JwtService jwtService;
+
+	@MockitoBean
+	private UserDetailsService userDetailsService;
+
+	// -------------------------------------------------------------------------
+	// Tests — happy paths
+	// -------------------------------------------------------------------------
+
 	@Test
-	void shouldReturnCreated201WithNewTicket() throws Exception {
+	@DisplayName("createTicket: should return HTTP 201 Created for authenticated AGENT or USER")
+	@WithMockUser(roles = { "USER", "AGENT" })
+	void shouldReturnHttp201WithNewCreatedTicket() throws Exception {
 
 		/**
 		 * Ticket informations from client
 		 */
-		Ticket ticket = new Ticket(null,
+		TicketRequestDto ticket = new TicketRequestDto(
 				"Virement bancaire non reçu",
-				"Le client indique qu’un virement SEPA effectué il y a 72 heures n’apparaît toujours pas sur son compte courant.",
-				TicketStatus.OPEN,
-				null);
+				"Le client indique qu’un virement SEPA effectué il y a 72 heures n’apparaît toujours pas sur son compte courant.");
 
 		/**
 		 * Simulated ticket found in fake database
@@ -88,7 +106,9 @@ public class TicketControllerTest {
 	}
 
 	@Test
-	void shouldReturnOk200WithAllTickets() throws Exception {
+	@DisplayName("getAllTickets: should return HTTP 200 OK for authenticated AGENT or USER")
+	@WithMockUser(roles = { "USER", "AGENT" })
+	void shouldReturnHttp200AndAllTicketsForAuthenticatedAgentOrUser() throws Exception {
 
 		List<Ticket> tickets = List.of(
 				new Ticket(
@@ -130,7 +150,6 @@ public class TicketControllerTest {
 				.andExpect(jsonPath("$[0].solution").isEmpty());
 
 		verify(ticketService).getAllTickets();
-
 	}
 
 	@Test
@@ -153,7 +172,7 @@ public class TicketControllerTest {
 	}
 
 	@Test
-	void shouldReturnOk200WithSolvedAndClosedTicket() throws Exception {
+	void shouldReturnHttp200WithSolvedAndClosedTicket() throws Exception {
 
 		/**
 		 * Simulated ticket found in fake database
@@ -185,7 +204,7 @@ public class TicketControllerTest {
 	}
 
 	@Test
-	void shouldReturnOk200WithTicketInProgressStatus() throws Exception {
+	void shouldReturnHttp200WithTicketInProgressStatus() throws Exception {
 
 		/**
 		 * Simulated ticket found in fake database
@@ -210,6 +229,54 @@ public class TicketControllerTest {
 		verify(ticketService).setTicketInProgress(2L);
 	}
 
+	// -------------------------------------------------------------------------
+	// Tests — error scenarios (edge cases)
+	// -------------------------------------------------------------------------
+
+	@Nested
+	@DisplayName("Unauthenticated users")
+	class UnauthenticatedUsersTests {
+
+		@Test
+		@DisplayName("getAllTickets: should return HTTP 401 Unauthorized for anonymous AGENT or USER")
+		void shouldReturnHttp401ForAnonymousUsersOnGetAllTicketsRoute() throws Exception {
+
+			mockMvc.perform(get("/api/tickets"))
+					.andExpect(status().isUnauthorized());
+		}
+
+		@Test
+		@DisplayName("createTicket: should return HTTP 401 Unauthorized for anonymous AGENT or USER")
+		void shouldReturnHttp401ForAnonymousUsersOnCreateTicketRoute() throws Exception {
+
+			mockMvc.perform(
+					post("/api/tickets")
+							.contentType(MediaType.APPLICATION_JSON)
+							.content("{}"))
+					.andExpect(status().isUnauthorized());
+		}
+
+		@Test
+		@DisplayName("solveTicket: should return HTTP 403 Forbidden for anonymous AGENT")
+		void shouldReturnHttp401ForAnonymousAgentOnSolveTicketRoute() throws Exception {
+
+			mockMvc.perform(
+					patch("/api/tickets/agent/2/solve")
+							.contentType(MediaType.APPLICATION_JSON)
+							.content("{}"))
+					.andExpect(status().isUnauthorized());
+		}
+
+		@Test
+		@DisplayName("setTicketInProgress: should return HTTP 403 Forbidden for anonymous agent")
+		void shouldReturnHttp401ForAnonymousAgentOnSetTicketInProgressRoute() throws Exception {
+
+			mockMvc.perform(
+					patch("/api/tickets/agent/2/in-progress"))
+					.andExpect(status().isUnauthorized());
+		}
+	}
+
 	@Test
 	void shouldReturnError404IfIdNotExists() throws Exception {
 
@@ -223,11 +290,12 @@ public class TicketControllerTest {
 	}
 
 	/**
-	 * Verifies that creating a ticket with blank fields returns HTTP 400 Bad Request.
+	 * Verifies that creating a ticket with blank fields returns HTTP 400 Bad
+	 * Request.
 	 *
 	 * @param title       blank title value (null, empty, whitespace)
 	 * @param description blank description value (null, empty, whitespace)
-	 * @throws Exception
+	 * @
 	 */
 	@ParameterizedTest(name = "[{index}] title=''{0}'' description=''{1}'' should return HTTP 400 Bad Request")
 	@MethodSource("blankInputs")
