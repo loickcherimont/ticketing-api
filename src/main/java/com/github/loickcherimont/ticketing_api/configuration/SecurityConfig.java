@@ -10,14 +10,14 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 import com.github.loickcherimont.ticketing_api.filter.JwtAuthenticationFilter;
 import com.github.loickcherimont.ticketing_api.models.Role;
-import com.github.loickcherimont.ticketing_api.services.impl.CustomUserDetailsService;
-
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 
 @Configuration
@@ -32,6 +32,9 @@ public class SecurityConfig {
             throws Exception {
         return http
                 .csrf(AbstractHttpConfigurer::disable)
+                .exceptionHandling((ex) -> ex
+                        .authenticationEntryPoint((request, response, authException) -> response
+                                .sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized")))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/tickets/agent/**").hasRole(Role.AGENT.name())
                         .requestMatchers(
@@ -51,8 +54,8 @@ public class SecurityConfig {
     }
 
     @Bean
-    public AuthenticationProvider authenticationProvider(CustomUserDetailsService customUserDetailsService) {
-        DaoAuthenticationProvider authenticationProvider = new DaoAuthenticationProvider(customUserDetailsService);
+    public AuthenticationProvider authenticationProvider(UserDetailsService userDetailsService) {
+        DaoAuthenticationProvider authenticationProvider = new DaoAuthenticationProvider(userDetailsService);
         authenticationProvider.setPasswordEncoder(passwordEncoder());
         return authenticationProvider;
     }
