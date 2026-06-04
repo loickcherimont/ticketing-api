@@ -55,7 +55,7 @@ public class TicketControllerTest {
 	private static final String TICKET_TITLE = "Virement bancaire non reçu";
 	private static final String TICKET_DESCRIPTION = "Le client indique qu’un virement SEPA effectué il y a 72 heures n’apparaît toujours pas sur son compte courant.";
 	private static final String TICKET_SOLUTION = "Le virement SEPA a été localisé en cours de traitement. Un délai supplémentaire de 24 à 48 heures est nécessaire en raison d'un contrôle de conformité. Le client sera notifié dès que les fonds seront crédités sur son compte courant.";
-	private static final String IN_PROGRESS_SOLUTION = "Ticket #2 in progress";
+	private static final String IN_PROGRESS_SOLUTION = "Ticket 2 en cours";
 	private static final String BASE_URI = "/api/tickets";
 
 	@Autowired

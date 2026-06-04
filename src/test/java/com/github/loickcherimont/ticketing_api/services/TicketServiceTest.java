@@ -134,7 +134,7 @@ class TicketServiceTest {
     @DisplayName("setTicketInProgress: should return ticket with IN_PROGRESS status")
     void shouldReturnTicketWithInProgressStatus() {
 
-        Ticket savedTicket = new Ticket(TICKET_ID, TICKET_TITLE, TICKET_DESC, TicketStatus.IN_PROGRESS, "Ticket #2 in progress");
+        Ticket savedTicket = new Ticket(TICKET_ID, TICKET_TITLE, TICKET_DESC, TicketStatus.IN_PROGRESS, "Ticket 2 en cours");
 
         when(ticketRepository.findById(TICKET_ID)).thenReturn(Optional.of(savedTicket));
         when(ticketRepository.save(any(Ticket.class))).thenReturn(savedTicket);
@@ -143,7 +143,7 @@ class TicketServiceTest {
 
         assertThat(result.getId()).isEqualTo(TICKET_ID);
         assertThat(result.getStatus()).isEqualTo(TicketStatus.IN_PROGRESS);
-        assertThat(result.getSolution()).isEqualTo("Ticket #2 in progress");
+        assertThat(result.getSolution()).isEqualTo("Ticket 2 en cours");
         verify(ticketRepository).findById(TICKET_ID);
         verify(ticketRepository).save(any(Ticket.class));
     }
@@ -167,7 +167,7 @@ class TicketServiceTest {
 
         assertThatThrownBy(() -> ticketService.getTicketById(99L))
                 .isInstanceOf(TicketNotFoundException.class)
-                .hasMessage("Ticket not found: 99");
+                .hasMessage("Ticket 99 introuvable");
 
         verify(ticketRepository).findById(99L);
     }
@@ -189,7 +189,7 @@ class TicketServiceTest {
 
         assertThatThrownBy(() -> ticketService.createTicket(request))
                 .isInstanceOf(TicketExistingTitleException.class)
-                .hasMessage("This title exists, try another one.");
+                .hasMessage("Ce titre existe déjà, veuillez en choisir un autre.");
 
         verify(ticketRepository).existsByTitle(request.title().trim());
     }

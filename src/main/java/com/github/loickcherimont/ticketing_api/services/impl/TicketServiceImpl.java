@@ -34,7 +34,7 @@ public class TicketServiceImpl implements TicketService {
      */
     @Override
     public Ticket getTicketById(Long id) {
-        return ticketRepository.findById(id).orElseThrow(() -> new TicketNotFoundException("Ticket not found: " + id));
+        return ticketRepository.findById(id).orElseThrow(() -> new TicketNotFoundException("Ticket " + id + " introuvable"));
     }
 
     /**
@@ -48,7 +48,7 @@ public class TicketServiceImpl implements TicketService {
     public Ticket createTicket(TicketRequestDto ticketRequestDto) {
 
         if (ticketRepository.existsByTitle(ticketRequestDto.title().trim())) {
-            throw new TicketExistingTitleException("This title exists, try another one.");
+            throw new TicketExistingTitleException("Ce titre existe déjà, veuillez en choisir un autre.");
         }
 
         Ticket newTicket = new Ticket();
@@ -94,7 +94,7 @@ public class TicketServiceImpl implements TicketService {
     public Ticket setTicketInProgress(Long id) {
         Ticket existingTicket = getTicketById(id);
         existingTicket.setStatus(TicketStatus.IN_PROGRESS);
-        existingTicket.setSolution("Ticket #" + existingTicket.getId() + " in progress");
+        existingTicket.setSolution("Ticket " + existingTicket.getId() + " en cours");
         return ticketRepository.save(existingTicket);
     }
 
