@@ -11,6 +11,7 @@ import com.github.loickcherimont.ticketing_api.dto.SigninRequestDto;
 import com.github.loickcherimont.ticketing_api.dto.SigninResponseDto;
 import com.github.loickcherimont.ticketing_api.services.AuthService;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -21,7 +22,7 @@ public class AuthController {
     private final AuthService authService;
 
     @PostMapping("/signin")
-    public ResponseEntity<SigninResponseDto> signin(@RequestBody SigninRequestDto signinRequestDto) {
+    public ResponseEntity<SigninResponseDto> signin(@Valid @RequestBody SigninRequestDto signinRequestDto) {
         return ResponseEntity.status(HttpStatus.OK).body(authService.signin(signinRequestDto));
     }
 }
