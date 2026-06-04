@@ -53,7 +53,7 @@ API available on:
 
 ```bash
 docker compose down
-docker system prune -f
+docker system prune
 ```
 
 
