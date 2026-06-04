@@ -39,8 +39,9 @@ public class SecurityConfig {
                         .requestMatchers("/api/tickets/agent/**").hasRole(Role.AGENT.name())
                         .requestMatchers(
                                 "/api/auth/**",
-                                "/api-docs",
-                                "/swagger-ui/**")
+                                "/api-docs/**",
+                                "/swagger-ui/**",
+                                "/swagger-ui.html")
                         .permitAll()
                         .anyRequest().authenticated())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
