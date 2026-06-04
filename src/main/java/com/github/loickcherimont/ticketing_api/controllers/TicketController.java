@@ -3,6 +3,7 @@ package com.github.loickcherimont.ticketing_api.controllers;
 import java.net.URI;
 import java.util.List;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,7 +21,7 @@ import com.github.loickcherimont.ticketing_api.dto.SolutionRequestDto;
 import com.github.loickcherimont.ticketing_api.dto.TicketRequestDto;
 import com.github.loickcherimont.ticketing_api.models.Ticket;
 
-@Tag(name = "Tickets", description = "Helpdesh management for tickets")
+@Tag(name = "Tickets", description = "Helpdesk management API for tickets")
 @RestController
 @RequestMapping("/api/tickets")
 @RequiredArgsConstructor
@@ -50,7 +51,8 @@ public class TicketController {
     public ResponseEntity<Ticket> createTicket(@Valid @RequestBody TicketRequestDto ticketRequestDto) {
         Ticket created = ticketService.createTicket(ticketRequestDto);
         return ResponseEntity
-                .created(URI.create("/api/tickets/" + created.getId()))
+                .status(HttpStatus.CREATED)
+                .location(URI.create("/api/tickets/" + created.getId()))
                 .body(created);
     }
 
@@ -58,7 +60,7 @@ public class TicketController {
     @ApiResponse(responseCode = "200", description = "Tickets retrieved")
     @GetMapping
     public ResponseEntity<List<Ticket>> getAllTickets() {
-        return ResponseEntity.ok(ticketService.getAllTickets());
+        return ResponseEntity.status(HttpStatus.OK).body(ticketService.getAllTickets());
     }
 
     /**
@@ -72,7 +74,7 @@ public class TicketController {
     @ApiResponse(responseCode = "404", description = "Ticket with specified `id` not found")
     @GetMapping("/{id}")
     public ResponseEntity<Ticket> getTicketById(@Parameter(description = "`id` of ticket") @PathVariable Long id) {
-        return ResponseEntity.ok(ticketService.getTicketById(id));
+        return ResponseEntity.status(HttpStatus.OK).body(ticketService.getTicketById(id));
     }
 
     /**
@@ -89,7 +91,7 @@ public class TicketController {
     @PatchMapping("/agent/{id}/solve")
     public ResponseEntity<Ticket> solveTicket(@PathVariable Long id,
             @Valid @RequestBody SolutionRequestDto solutionRequestDto) {
-        return ResponseEntity.ok(ticketService.solveTicket(id, solutionRequestDto));
+        return ResponseEntity.status(HttpStatus.OK).body(ticketService.solveTicket(id, solutionRequestDto));
     }
 
     /**
@@ -105,6 +107,6 @@ public class TicketController {
     @SecurityRequirement(name = "bearerAuth")
     @PatchMapping("/agent/{id}/in-progress")
     public ResponseEntity<Ticket> setTicketInProgress(@PathVariable Long id) {
-        return ResponseEntity.ok(ticketService.setTicketInProgress(id));
+        return ResponseEntity.status(HttpStatus.OK).body(ticketService.setTicketInProgress(id));
     }
 }

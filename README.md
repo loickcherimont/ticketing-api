@@ -27,10 +27,35 @@ git clone https://github.com/loickcherimont/ticketing-api.git
 2. Go in the project and run it :
 ```bash
 cd ticketing-api
-./mvnw clean spring-boot:run
+./mvnw spring-boot:run
 ```
 
 3. Access to API with route : http://localhost:8080/api/tickets
+
+### Setup Dev
+
+```bash
+# 1. Start PostgreSQL
+docker compose up -d db
+
+# 2. Run the API with Maven
+./mvnw spring-boot:run
+```
+
+API available on:
+- **Swagger UI** → `http://localhost:8080/swagger-ui`
+- **Postman / cURL** → `http://localhost:8080/api/tickets` (for more routes, see [Usage](#️-usage))
+
+### Clean up
+
+> [!IMPORTANT]
+> These steps will remove the PostgreSQL container and all unused Docker resources. Make sure you have pushed your changes before running them, as the database data will be permanently deleted.
+
+```bash
+docker compose down
+docker system prune -f
+```
+
 
 ## ▶️ Usage
 
