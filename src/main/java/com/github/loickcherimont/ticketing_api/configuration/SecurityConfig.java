@@ -34,9 +34,9 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .exceptionHandling((ex) -> ex
                         .authenticationEntryPoint((request, response, authException) -> response
-                                .sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized"))
+                                .sendError(HttpServletResponse.SC_UNAUTHORIZED, "Non authentifié"))
                         .accessDeniedHandler((request, response, accessDeniedException) -> response
-                                .sendError(HttpServletResponse.SC_FORBIDDEN, "Forbidden")))
+                                .sendError(HttpServletResponse.SC_FORBIDDEN, "Accès interdit")))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/tickets/agent/**").hasRole(Role.AGENT.name())
                         .requestMatchers(
