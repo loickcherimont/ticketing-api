@@ -1,17 +1,21 @@
 package com.github.loickcherimont.ticketing_api.configuration;
 
-import org.jspecify.annotations.NonNull;
+import org.springframework.lang.NonNull;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
+import lombok.RequiredArgsConstructor;
+
 /**
  * To enable CORS for RESTful Web API
  */
 @Configuration
+@RequiredArgsConstructor
 public class WebConfig implements WebMvcConfigurer {
 
+    @NonNull
     @Value("${cors.allowed-origins}")
     private String[] allowedOrigins;
 
