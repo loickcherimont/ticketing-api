@@ -65,7 +65,7 @@ docker compose up -d db
 ./mvnw spring-boot:run
 
 # API is now running on http://localhost:8080
-```
+``` 
 
 **Access the API:**
 - **Swagger UI (interactive docs)** → http://localhost:8080/swagger-ui.html
@@ -77,11 +77,19 @@ docker compose up -d db
 # Remove PostgreSQL container and unused Docker resources
 # ⚠️ WARNING: This deletes all database data. Push changes first!
 docker compose down
-docker system prune -f
+docker system prune
 ```
 
 
 ## ▶️ Usage
+
+> [!IMPORTANT]
+> To test each route, use the following credentials:
+>
+> | Role | Username | Password |
+> |------|----------|----------|
+> | USER | `john.doe@gmail.com` | `test123` |
+> | AGENT | `agent@company.com` | `agent123` |
 
 | Method | Endpoint | Description | Auth |
 |--------|----------|-------------|------|
