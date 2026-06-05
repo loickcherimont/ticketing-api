@@ -171,7 +171,7 @@ curl -X PATCH http://localhost:8080/api/tickets/agent/1/solve \
 ## 📄 API Documentation
 
 **Full interactive documentation on Railway** with request/response examples:
-→ https://ticketing-api-production-92ac.up.railway.app/swagger-ui/index.html
+→ https://ticketing-api-production-92ac.up.railway.app/
 
 ![Preview API documentation](.github/endpoints-docs.png 'API docs with Swagger UI | Ticket API')
 
