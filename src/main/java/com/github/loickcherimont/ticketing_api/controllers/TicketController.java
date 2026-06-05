@@ -3,6 +3,7 @@ package com.github.loickcherimont.ticketing_api.controllers;
 import java.net.URI;
 import java.util.List;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,7 +20,21 @@ import com.github.loickcherimont.ticketing_api.dto.SolutionRequestDto;
 import com.github.loickcherimont.ticketing_api.dto.TicketRequestDto;
 import com.github.loickcherimont.ticketing_api.models.Ticket;
 
-@Tag(name = "Tickets", description = "Helpdesh management for tickets")
+/**
+ * REST controller for helpdesk ticket management endpoints.
+ *
+ * <p>
+ * <strong>Responsibility:</strong> Handles HTTP requests for ticket lifecycle management.
+ * Supports creating new tickets, retrieving tickets, and managing ticket status transitions.
+ * Enforces role-based access control: customers can create and view tickets,
+ * support agents can additionally claim tickets and provide solutions.
+ * </p>
+ *
+ * @see com.github.loickcherimont.ticketing_api.services.TicketService
+ * @see com.github.loickcherimont.ticketing_api.models.Ticket
+ * @see com.github.loickcherimont.ticketing_api.filter.JwtAuthenticationFilter
+ */
+@Tag(name = "Tickets", description = "Helpdesk management API for tickets")
 @RestController
 @RequestMapping("/api/tickets")
 @RequiredArgsConstructor
@@ -41,23 +56,26 @@ public class TicketController {
      * @throws Exception ResponseEntity containing the fields with errors and
      *                   {@code HTTP 400 Bad Request}
      */
-    @Operation(summary = "Create a ticket", description = "Create a new ticket using `ticketRequestDto` fields and save it to database")
+    @Operation(summary = "Create a ticket", description = "Create a new ticket using `ticketRequestDto` fields and save it to database (requires authentication)")
     @ApiResponse(responseCode = "201", description = "Ticket created with success")
     @ApiResponse(responseCode = "400", description = "Blank or invalid fields")
+    @ApiResponse(responseCode = "401", description = "Unauthorized - JWT token missing or invalid")
     @ApiResponse(responseCode = "409", description = "Ticket with same title already exists")
     @PostMapping
     public ResponseEntity<Ticket> createTicket(@Valid @RequestBody TicketRequestDto ticketRequestDto) {
         Ticket created = ticketService.createTicket(ticketRequestDto);
         return ResponseEntity
-                .created(URI.create("/api/tickets/" + created.getId()))
+                .status(HttpStatus.CREATED)
+                .location(URI.create("/api/tickets/" + created.getId()))
                 .body(created);
     }
 
-    @Operation(summary = "Get all tickets", description = "Fetch all tickets from database")
+    @Operation(summary = "Get all tickets", description = "Fetch all tickets from database (requires authentication)")
     @ApiResponse(responseCode = "200", description = "Tickets retrieved")
+    @ApiResponse(responseCode = "401", description = "Unauthorized - JWT token missing or invalid")
     @GetMapping
     public ResponseEntity<List<Ticket>> getAllTickets() {
-        return ResponseEntity.ok(ticketService.getAllTickets());
+        return ResponseEntity.status(HttpStatus.OK).body(ticketService.getAllTickets());
     }
 
     /**
@@ -66,12 +84,13 @@ public class TicketController {
      * @param id Ticket identifier
      * @return the ticket if found
      */
-    @Operation(summary = "Get ticket by id", description = "Get a specific ticket by its `id`")
+    @Operation(summary = "Get ticket by id", description = "Get a specific ticket by its `id` (requires authentication)")
     @ApiResponse(responseCode = "200", description = "Ticket retrieved by `id`")
+    @ApiResponse(responseCode = "401", description = "Unauthorized - JWT token missing or invalid")
     @ApiResponse(responseCode = "404", description = "Ticket with specified `id` not found")
     @GetMapping("/{id}")
     public ResponseEntity<Ticket> getTicketById(@Parameter(description = "`id` of ticket") @PathVariable Long id) {
-        return ResponseEntity.ok(ticketService.getTicketById(id));
+        return ResponseEntity.status(HttpStatus.OK).body(ticketService.getTicketById(id));
     }
 
     /**
@@ -81,13 +100,16 @@ public class TicketController {
      * @param solutionRequestDto request body containing the solution text
      * @return updated ticket with status {@code SOLVED}
      */
-    @Operation(summary = "Solve ticket by id", description = "Add a solution for target ticket")
+    @Operation(summary = "Solve ticket by id", description = "Add a solution for target ticket (AGENT role required)")
     @ApiResponse(responseCode = "200", description = "Ticket solved")
     @ApiResponse(responseCode = "400", description = "Ticket with invalid solution")
-    @PatchMapping("/{id}/solve")
+    @ApiResponse(responseCode = "401", description = "Unauthorized - JWT token missing or invalid")
+    @ApiResponse(responseCode = "403", description = "Forbidden - insufficient role (AGENT role required)")
+    @ApiResponse(responseCode = "404", description = "Ticket with specified `id` not found")
+    @PatchMapping("/agent/{id}/solve")
     public ResponseEntity<Ticket> solveTicket(@PathVariable Long id,
             @Valid @RequestBody SolutionRequestDto solutionRequestDto) {
-        return ResponseEntity.ok(ticketService.solveTicket(id, solutionRequestDto));
+        return ResponseEntity.status(HttpStatus.OK).body(ticketService.solveTicket(id, solutionRequestDto));
     }
 
     /**
@@ -96,12 +118,13 @@ public class TicketController {
      * @param id ticket identifier
      * @return updated ticket with {@code IN_PROGRESS} status
      */
-    @Operation(summary = "Set ticket in progress", description = "Change ticket status to IN_PROGRESS")
-    @ApiResponse(responseCode = "200", description = "Ticket in progress")
-    @ApiResponse(responseCode = "400", description = "Blank or invalid fields")
-    @ApiResponse(responseCode = "409", description = "Ticket with same title already exists")
-    @PatchMapping("/{id}/in-progress")
+    @Operation(summary = "Set ticket in progress", description = "Change ticket status to IN_PROGRESS (AGENT role required)")
+    @ApiResponse(responseCode = "200", description = "Ticket marked as in progress")
+    @ApiResponse(responseCode = "401", description = "Unauthorized - JWT token missing or invalid")
+    @ApiResponse(responseCode = "403", description = "Forbidden - insufficient role (AGENT role required)")
+    @ApiResponse(responseCode = "404", description = "Ticket with specified `id` not found")
+    @PatchMapping("/agent/{id}/in-progress")
     public ResponseEntity<Ticket> setTicketInProgress(@PathVariable Long id) {
-        return ResponseEntity.ok(ticketService.setTicketInProgress(id));
+        return ResponseEntity.status(HttpStatus.OK).body(ticketService.setTicketInProgress(id));
     }
 }

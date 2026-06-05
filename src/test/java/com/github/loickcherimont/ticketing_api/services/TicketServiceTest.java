@@ -8,6 +8,7 @@ import static org.mockito.Mockito.when;
 
 import java.util.Optional;
 
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -23,150 +24,173 @@ import com.github.loickcherimont.ticketing_api.models.TicketStatus;
 import com.github.loickcherimont.ticketing_api.repository.TicketRepository;
 import com.github.loickcherimont.ticketing_api.services.impl.TicketServiceImpl;
 
+/**
+ * Unit tests for {@link TicketServiceImpl}.
+ *
+ * <p>All dependencies (repository) are mocked with Mockito:
+ * no database is accessed during test execution.</p>
+ *
+ * <p>Covered scenarios:</p>
+ * <ul>
+ *   <li>Retrieving an existing ticket by identifier</li>
+ *   <li>Creating a new ticket</li>
+ *   <li>Resolving a ticket (CLOSED status)</li>
+ *   <li>Setting a ticket to IN_PROGRESS status</li>
+ *   <li>Throwing {@link TicketNotFoundException} for an unknown id</li>
+ *   <li>Throwing {@link TicketExistingTitleException} for an already existing title</li>
+ * </ul>
+ */
 @ExtendWith(MockitoExtension.class)
-public class TicketServiceTest {
+class TicketServiceTest {
 
-	@Mock
-	private TicketRepository ticketRepository;
+    // -------------------------------------------------------------------------
+    // Shared test data
+    // Centralized here: if a value changes, it only needs to be updated once.
+    // -------------------------------------------------------------------------
 
-	@InjectMocks
-	private TicketServiceImpl ticketService;
+    private static final Long   TICKET_ID    = 2L;
+    private static final String TICKET_TITLE = "Virement bancaire non reçu";
+    private static final String TICKET_DESC  =
+            "Le client indique qu'un virement SEPA effectué il y a 72 heures "
+            + "n'apparaît toujours pas sur son compte courant.";
+    private static final String TICKET_SOLUTION =
+            "Le virement SEPA a été localisé en cours de traitement. "
+            + "Un délai supplémentaire de 24 à 48 heures est nécessaire en raison "
+            + "d'un contrôle de conformité. Le client sera notifié dès que les fonds "
+            + "seront crédités sur son compte courant.";
 
-	@Test
-	void shouldReturnTicketIfIdExists() throws Exception {
+    // -------------------------------------------------------------------------
+    // Mocks and class under test
+    // -------------------------------------------------------------------------
 
-		Ticket ticket = new Ticket(
-				2L,
-				"Virement bancaire non reçu",
-				"Le client indique qu’un virement SEPA effectué il y a 72 heures n’apparaît toujours pas sur son compte courant.",
-				TicketStatus.IN_PROGRESS,
-				null);
+    @Mock
+    private TicketRepository ticketRepository;
 
-		when(ticketRepository.findById(2L)).thenReturn(Optional.of(ticket));
+    @InjectMocks
+    private TicketServiceImpl ticketService;
 
-		Ticket actualTicket = ticketService.getTicketById(2L);
+    // -------------------------------------------------------------------------
+    // Tests — happy paths
+    // -------------------------------------------------------------------------
 
-		assertThat(actualTicket).isNotNull();
-		assertThat(actualTicket.getId()).isEqualTo(2L);
+    @Test
+    @DisplayName("getTicketById: should return ticket when identifier exists")
+    void shouldReturnTicketIfIdExists() {
 
-		verify(ticketRepository).findById(2L);
-	}
+        Ticket ticket = new Ticket(TICKET_ID, TICKET_TITLE, TICKET_DESC, TicketStatus.IN_PROGRESS, null);
 
-	@Test
-	void shouldReturnNewCreatedTicket() throws Exception {
+        when(ticketRepository.findById(TICKET_ID)).thenReturn(Optional.of(ticket));
 
-		/**
-		 * Ticket informations from client
-		 */
-		TicketRequestDto ticket = new TicketRequestDto(
-				"Virement bancaire non reçu",
-				"Le client indique qu’un virement SEPA effectué il y a 72 heures n’apparaît toujours pas sur son compte courant.");
+        Ticket result = ticketService.getTicketById(TICKET_ID);
 
-		/**
-		 * Simulated ticket found in fake database
-		 */
-		Ticket savedTicket = new Ticket(
-				2L,
-				"Virement bancaire non reçu",
-				"Le client indique qu’un virement SEPA effectué il y a 72 heures n’apparaît toujours pas sur son compte courant.",
-				TicketStatus.OPEN,
-				null);
+        assertThat(result).isNotNull();
+        assertThat(result.getId()).isEqualTo(TICKET_ID);
+        verify(ticketRepository).findById(TICKET_ID);
+    }
 
-		when(ticketRepository.save(any(Ticket.class))).thenReturn(savedTicket);
+    @Test
+    @DisplayName("createTicket: should return created ticket with OPEN status and no solution")
+    void shouldReturnNewCreatedTicket() {
 
-		Ticket actualTicket = ticketService.createTicket(ticket);
+        TicketRequestDto request = new TicketRequestDto(TICKET_TITLE, TICKET_DESC);
 
-		assertThat(actualTicket.getId()).isNotNull();
-		assertThat(actualTicket.getId()).isEqualTo(2L);
-		assertThat(actualTicket.getTitle()).isEqualTo("Virement bancaire non reçu");
-		assertThat(actualTicket.getDescription()).isEqualTo(
-				"Le client indique qu’un virement SEPA effectué il y a 72 heures n’apparaît toujours pas sur son compte courant.");
-		assertThat(actualTicket.getStatus()).isEqualTo(TicketStatus.OPEN);
-		assertThat(actualTicket.getSolution()).isNull();
+        Ticket savedTicket = new Ticket(TICKET_ID, TICKET_TITLE, TICKET_DESC, TicketStatus.OPEN, null);
 
-		verify(ticketRepository).save(any(Ticket.class));
-	}
+        when(ticketRepository.save(any(Ticket.class))).thenReturn(savedTicket);
 
-	@Test
-	void shouldReturnSolvedTicketWithClosedStatus() throws Exception {
+        Ticket result = ticketService.createTicket(request);
 
-		Ticket savedTicket = new Ticket(
-				2L,
-				"Virement bancaire non reçu",
-				"Le client indique qu’un virement SEPA effectué il y a 72 heures n’apparaît toujours pas sur son compte courant.",
-				TicketStatus.CLOSED,
-				"Le virement SEPA a été localisé en cours de traitement. Un délai supplémentaire de 24 à 48 heures est nécessaire en raison d'un contrôle de conformité. Le client sera notifié dès que les fonds seront crédités sur son compte courant.");
+        assertThat(result.getId()).isEqualTo(TICKET_ID);
+        assertThat(result.getTitle()).isEqualTo(TICKET_TITLE);
+        assertThat(result.getDescription()).isEqualTo(TICKET_DESC);
+        assertThat(result.getStatus()).isEqualTo(TicketStatus.OPEN);
+        assertThat(result.getSolution()).isNull();
+        verify(ticketRepository).save(any(Ticket.class));
+    }
 
-		when(ticketRepository.findById(2L)).thenReturn(Optional.of(savedTicket));
-		when(ticketRepository.save(any(Ticket.class))).thenReturn(savedTicket);
+    @Test
+    @DisplayName("solveTicket: should return ticket with CLOSED status and trimmed solution")
+    void shouldReturnSolvedTicketWithClosedStatus() {
 
-		Ticket solvedTicket = ticketService.solveTicket(
-				2L,
-				new SolutionRequestDto(
-						"  Le virement SEPA a été localisé en cours de traitement. Un délai supplémentaire de 24 à 48 heures est nécessaire en raison d'un contrôle de conformité. Le client sera notifié dès que les fonds seront crédités sur son compte courant.        "));
+        Ticket savedTicket = new Ticket(TICKET_ID, TICKET_TITLE, TICKET_DESC, TicketStatus.CLOSED, TICKET_SOLUTION);
 
-		assertThat(solvedTicket.getId()).isEqualTo(2L);
-		assertThat(solvedTicket.getSolution()).isEqualTo(
-				"Le virement SEPA a été localisé en cours de traitement. Un délai supplémentaire de 24 à 48 heures est nécessaire en raison d'un contrôle de conformité. Le client sera notifié dès que les fonds seront crédités sur son compte courant.");
-		assertThat(solvedTicket.getStatus()).isEqualTo(TicketStatus.CLOSED);
+        when(ticketRepository.findById(TICKET_ID)).thenReturn(Optional.of(savedTicket));
+        when(ticketRepository.save(any(Ticket.class))).thenReturn(savedTicket);
 
-		verify(ticketRepository).findById(2L);
-		verify(ticketRepository).save(any(Ticket.class));
-	}
+        // The solution is intentionally provided with leading and trailing spaces
+        // to verify that the service trims it before persisting.
+        SolutionRequestDto solutionWithPadding = new SolutionRequestDto("  " + TICKET_SOLUTION + "        ");
 
-	@Test
-	void shouldReturnTicketWithInProgressStatus() throws Exception {
+        Ticket result = ticketService.solveTicket(TICKET_ID, solutionWithPadding);
 
-		/**
-		 * Simulated ticket found in fake database
-		 */
-		Ticket savedTicket = new Ticket(
-				2L,
-				"Virement bancaire non reçu",
-				"Le client indique qu’un virement SEPA effectué il y a 72 heures n’apparaît toujours pas sur son compte courant.",
-				TicketStatus.IN_PROGRESS,
-				"Ticket #2 in progress");
+        assertThat(result.getId()).isEqualTo(TICKET_ID);
+        assertThat(result.getStatus()).isEqualTo(TicketStatus.CLOSED);
+        assertThat(result.getSolution()).isEqualTo(TICKET_SOLUTION);
+        verify(ticketRepository).findById(TICKET_ID);
+        verify(ticketRepository).save(any(Ticket.class));
+    }
 
-		when(ticketRepository.findById(2L)).thenReturn(Optional.of(savedTicket));
-		when(ticketRepository.save(any(Ticket.class))).thenReturn(savedTicket);
+    @Test
+    @DisplayName("setTicketInProgress: should return ticket with IN_PROGRESS status")
+    void shouldReturnTicketWithInProgressStatus() {
 
-		Ticket inProgressTicket = ticketService.setTicketInProgress(2L);
+        Ticket savedTicket = new Ticket(TICKET_ID, TICKET_TITLE, TICKET_DESC, TicketStatus.IN_PROGRESS, "Ticket 2 en cours");
 
-		assertThat(inProgressTicket.getId()).isEqualTo(2L);
-		assertThat(inProgressTicket.getStatus()).isEqualTo(TicketStatus.IN_PROGRESS);
-		assertThat(inProgressTicket.getSolution()).isEqualTo("Ticket #2 in progress");
+        when(ticketRepository.findById(TICKET_ID)).thenReturn(Optional.of(savedTicket));
+        when(ticketRepository.save(any(Ticket.class))).thenReturn(savedTicket);
 
-		verify(ticketRepository).findById(2L);
-		verify(ticketRepository).save(any(Ticket.class));
-	}
+        Ticket result = ticketService.setTicketInProgress(TICKET_ID);
 
-	@Test
-	void shouldReturnTicketNotFoundExceptionIfIdNotExists() throws Exception {
+        assertThat(result.getId()).isEqualTo(TICKET_ID);
+        assertThat(result.getStatus()).isEqualTo(TicketStatus.IN_PROGRESS);
+        assertThat(result.getSolution()).isEqualTo("Ticket 2 en cours");
+        verify(ticketRepository).findById(TICKET_ID);
+        verify(ticketRepository).save(any(Ticket.class));
+    }
 
-		when(ticketRepository.findById(99L)).thenReturn(Optional.empty());
+    // -------------------------------------------------------------------------
+    // Tests — error scenarios (edge cases)
+    // -------------------------------------------------------------------------
 
-		/**
-		 * To verify if exception is thrown
-		 */
-		assertThatThrownBy(() -> ticketService.getTicketById(99L))
-				.isInstanceOf(TicketNotFoundException.class)
-				.hasMessage("Ticket not found: 99");
+    /**
+     * Verifies that {@link TicketNotFoundException} is thrown when the requested
+     * identifier does not exist in the database.
+     *
+     * <p>The error message must contain the provided identifier so that
+     * callers (controllers, logs) can quickly identify the missing ticket.</p>
+     */
+    @Test
+    @DisplayName("getTicketById: should throw TicketNotFoundException when identifier is unknown")
+    void shouldThrowTicketNotFoundExceptionWhenIdDoesNotExist() {
 
-		verify(ticketRepository).findById(99L);
+        when(ticketRepository.findById(99L)).thenReturn(Optional.empty());
 
-	}
+        assertThatThrownBy(() -> ticketService.getTicketById(99L))
+                .isInstanceOf(TicketNotFoundException.class)
+                .hasMessage("Ticket 99 introuvable");
 
-	@Test
-	void shouldReturnTicketExistingExceptionForDuplicateTitle() throws Exception {
+        verify(ticketRepository).findById(99L);
+    }
 
-		TicketRequestDto ticketRequestDto = new TicketRequestDto(
-				"Virement bancaire non reçu",
-				"Le client indique qu’un virement SEPA effectué il y a 72 heures n’apparaît toujours pas sur son compte courant.");
+    /**
+     * Verifies that {@link TicketExistingTitleException} is thrown when a ticket
+     * with the same title already exists.
+     *
+     * <p>The title is trimmed in the service layer. This test ensures that
+     * the repository validation is performed using the sanitized value.</p>
+     */
+    @Test
+    @DisplayName("createTicket: should throw TicketExistingTitleException when title is already used")
+    void shouldThrowTicketExistingTitleExceptionForDuplicateTitle() {
 
-		when(ticketRepository.existsByTitle(ticketRequestDto.title().trim())).thenReturn(true);
+        TicketRequestDto request = new TicketRequestDto(TICKET_TITLE, TICKET_DESC);
 
-		assertThatThrownBy(() -> ticketService.createTicket(ticketRequestDto)).isInstanceOf(TicketExistingTitleException.class).hasMessage("This title exists, try another one.");
+        when(ticketRepository.existsByTitle(request.title().trim())).thenReturn(true);
 
-		verify(ticketRepository).existsByTitle(ticketRequestDto.title().trim());
-	}
+        assertThatThrownBy(() -> ticketService.createTicket(request))
+                .isInstanceOf(TicketExistingTitleException.class)
+                .hasMessage("Ce titre existe déjà, veuillez en choisir un autre.");
+
+        verify(ticketRepository).existsByTitle(request.title().trim());
+    }
 }

@@ -1,54 +1,179 @@
-# 🎧 Ticketing API
+# 🎧 Ticketing API  
 
-## 🌱 About
+  This is a **back-end REST API** made with **Spring Boot** for efficient helpdesk ticket tracking and resolution management. It features JWT-based authentication, role-based access control (USER/AGENT), and comprehensive API documentation with Swagger UI.
 
-This is **back-end system** made with Spring Boot for efficient issue tracking and resolution management.
+## 🖥️ Tech Stack
 
-## 🖥️ Tech stack
+**Backend:**
+- **Java 21** — Modern language features, better performance
+- **Spring Boot 3.5.4** — Web framework, REST controllers, Data JPA
+- **Spring Security** — Security, JWT authentication & role-based authorization
+- **PostgreSQL 15+** — Production database (required for dev setup)
+- **jjwt 0.11.5** — JWT token signing & validation
+- **JUnit 5 + Mockito** — Unit testing (all mocked)
 
-- **Back-End :** Java 21, Spring (Spring Boot, Spring MVC, Spring Data JPA), API REST
-- **Database :** H2 (SQL)
-- **DevOps / DevTools :** Git / GitHub, Maven, Linux (Fedora) 
+**Frontend (Static Assets):**
+- **Bootstrap 5.3.3** — Responsive UI framework
 
-### Prerequisites
+**DevOps:**
+- **Railway** — Server hosting
+- **Supabase** — Database hosting (production)
+- **Docker** — Server containerization (production)
+- **Docker Compose** — PostgreSQL containerization (development)
+- **Git / GitHub** — Version control
 
-Before project running, you'll need :  
+## 🔐 Authentication & Authorization
 
-*Actually, you won't need more dependencies to run correctly this API.*
+### JWT Token Flow
+
+1. **Sign in** → POST `/api/auth/signin` with email & password
+2. **Receive JWT token** → Token expires after configured time
+3. **Use token** → Send in `Authorization: Bearer <token>` header
+4. **Token validated** → Spring Security authenticates every request
+
+### User Roles
+
+| Role | Permissions |
+|------|-------------|
+| **USER** | • Create tickets<br/>• View all tickets<br/>• View ticket details |
+| **AGENT** | • All USER permissions<br/>• Claim tickets (set IN_PROGRESS)<br/>• Resolve tickets (add solution) |
+
+### Endpoint Access Matrix
+
+| Endpoint | Method | AGENT | USER | Public |
+|----------|--------|-------|------|--------|
+| `/api/auth/signin` | POST | ✅ | ✅ | ✅ |
+| `/api/tickets` | GET | ✅ | ✅ | ❌ |
+| `/api/tickets/{id}` | GET | ✅ | ✅ | ❌ |
+| `/api/tickets` | POST | ✅ | ✅ | ❌ |
+| `/api/tickets/agent/{id}/in-progress` | PATCH | ✅ | ❌ | ❌ |
+| `/api/tickets/agent/{id}/solve` | PATCH | ✅ | ❌ | ❌ |
 
 ## 🚀 Setup
 
-1. Clone the repository using :
+### Quick Start (PostgreSQL)
 
 ```bash
+# 1. Clone repository
 git clone https://github.com/loickcherimont/ticketing-api.git
-```
-
-2. Go in the project and run it :
-```bash
 cd ticketing-api
-./mvnw clean spring-boot:run
+
+# 2. Start PostgreSQL container
+docker compose up -d db
+
+# 3. Run the API with Maven
+./mvnw spring-boot:run
+
+# API is now running on http://localhost:8080
+``` 
+
+**Access the API:**
+- **Swagger UI (interactive docs)** → http://localhost:8080/swagger-ui.html
+- **API Root** → http://localhost:8080/
+
+### Clean Up
+
+```bash
+# Remove PostgreSQL container and unused Docker resources
+# ⚠️ WARNING: This deletes all database data. Push changes first!
+docker compose down
+docker system prune
 ```
 
-3. Access to API with route : http://localhost:8080/api/tickets
 
 ## ▶️ Usage
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/api/tickets` | Get all tickets |
-| `GET` | `/api/tickets/{id}` | Get ticket by ID |
-| `POST` | `/api/tickets` | Create new ticket |
-| `PATCH` | `/api/tickets/{id}/solve` | Solve ticket with solution |
-| `PATCH` | `/api/tickets/{id}/in-progress` | Set ticket in progress |
+> [!IMPORTANT]
+> To test each route, use the following credentials:
+>
+> | Role | Username | Password |
+> |------|----------|----------|
+> | USER | `john.doe@gmail.com` | `test123` |
+> | AGENT | `agent@company.com` | `agent123` |
+
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| POST | `/api/auth/signin` | Get JWT token | ✅ Public |
+| GET | `/api/tickets` | List all tickets | 🔒 Required |
+| GET | `/api/tickets/{id}` | Get ticket by ID | 🔒 Required |
+| POST | `/api/tickets` | Create new ticket | 🔒 Required |
+| PATCH | `/api/tickets/agent/{id}/in-progress` | Claim ticket | 🔒 AGENT only |
+| PATCH | `/api/tickets/agent/{id}/solve` | Resolve ticket | 🔒 AGENT only |
+
+### 1. Sign In (Get JWT Token)
+
+```bash
+curl -X POST http://localhost:8080/api/auth/signin \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "user@example.com",
+    "password": "password123"
+  }'
+```
+
+**Response (200 OK):**
+```json
+{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "email": "user@example.com",
+  "role": "USER"
+}
+```
+
+### 2. Create a Ticket (USER role)
+
+```bash
+curl -X POST http://localhost:8080/api/tickets \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIs..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Login page not working",
+    "description": "Cannot sign in to account after password reset"
+  }'
+```
+
+**Response (201 Created):**
+```json
+{
+  "id": 1,
+  "title": "Login page not working",
+  "description": "Cannot sign in to account after password reset",
+  "status": "OPEN",
+  "solution": null
+}
+```
+
+### 3. View All Tickets (USER/AGENT role)
+
+```bash
+curl -X GET http://localhost:8080/api/tickets \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIs..."
+```
+
+### 4. Claim Ticket (AGENT role only)
+
+```bash
+curl -X PATCH http://localhost:8080/api/tickets/agent/1/in-progress \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIs..."
+```
+
+### 5. Resolve Ticket (AGENT role only)
+
+```bash
+curl -X PATCH http://localhost:8080/api/tickets/agent/1/solve \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIs..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "solution": "Password reset link sent to registered email. User can now sign in."
+  }'
+```
 
 ## 📄 API Documentation
 
-Try the Swagger UI here : https://ticketing-api-production-92ac.up.railway.app/swagger-ui/index.html
+**Full interactive documentation on Railway** with request/response examples:
+→ https://ticketing-api-production-92ac.up.railway.app/swagger-ui/index.html
 
 ![Preview API documentation](.github/endpoints-docs.png 'API docs with Swagger UI | Ticket API')
-
-
 
 ## 🔑 License
 
