@@ -12,7 +12,6 @@ import com.github.loickcherimont.ticketing_api.services.TicketService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -107,7 +106,6 @@ public class TicketController {
     @ApiResponse(responseCode = "401", description = "Unauthorized - JWT token missing or invalid")
     @ApiResponse(responseCode = "403", description = "Forbidden - insufficient role (AGENT role required)")
     @ApiResponse(responseCode = "404", description = "Ticket with specified `id` not found")
-    @SecurityRequirement(name = "bearerAuth")
     @PatchMapping("/agent/{id}/solve")
     public ResponseEntity<Ticket> solveTicket(@PathVariable Long id,
             @Valid @RequestBody SolutionRequestDto solutionRequestDto) {
@@ -125,7 +123,6 @@ public class TicketController {
     @ApiResponse(responseCode = "401", description = "Unauthorized - JWT token missing or invalid")
     @ApiResponse(responseCode = "403", description = "Forbidden - insufficient role (AGENT role required)")
     @ApiResponse(responseCode = "404", description = "Ticket with specified `id` not found")
-    @SecurityRequirement(name = "bearerAuth")
     @PatchMapping("/agent/{id}/in-progress")
     public ResponseEntity<Ticket> setTicketInProgress(@PathVariable Long id) {
         return ResponseEntity.status(HttpStatus.OK).body(ticketService.setTicketInProgress(id));
