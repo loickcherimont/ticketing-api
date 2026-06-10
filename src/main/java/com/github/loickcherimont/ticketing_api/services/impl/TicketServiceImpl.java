@@ -1,8 +1,6 @@
 package com.github.loickcherimont.ticketing_api.services.impl;
 
 import java.util.List;
-import java.util.UUID;
-
 import org.springframework.stereotype.Service;
 import com.github.loickcherimont.ticketing_api.dto.SolutionRequestDto;
 import com.github.loickcherimont.ticketing_api.dto.TicketRequestDto;
@@ -35,7 +33,7 @@ public class TicketServiceImpl implements TicketService {
      * @throws TicketNotFoundException if no ticket exists with the given id
      */
     @Override
-    public Ticket getTicketById(UUID id) {
+    public Ticket getTicketById(Long id) {
         return ticketRepository.findById(id).orElseThrow(() -> new TicketNotFoundException("Ticket " + id + " introuvable"));
     }
 
@@ -77,7 +75,7 @@ public class TicketServiceImpl implements TicketService {
      *         status
      */
     @Override
-    public Ticket solveTicket(UUID id, SolutionRequestDto solutionRequestDto) {
+    public Ticket solveTicket(Long id, SolutionRequestDto solutionRequestDto) {
         Ticket existingTicket = getTicketById(id);
         existingTicket.setSolution(solutionRequestDto.solution().trim());
         existingTicket.setStatus(TicketStatus.CLOSED);
@@ -93,7 +91,7 @@ public class TicketServiceImpl implements TicketService {
      * @return The updated ticket with {@code IN_PROGRESS} status
      */
     @Override
-    public Ticket setTicketInProgress(UUID id) {
+    public Ticket setTicketInProgress(Long id) {
         Ticket existingTicket = getTicketById(id);
         existingTicket.setStatus(TicketStatus.IN_PROGRESS);
         existingTicket.setSolution("Ticket " + existingTicket.getId() + " en cours");
