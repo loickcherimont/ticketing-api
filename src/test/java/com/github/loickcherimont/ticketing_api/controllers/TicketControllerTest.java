@@ -166,7 +166,7 @@ public class TicketControllerTest {
 
 		when(ticketService.solveTicket(TICKET_ID, solutionRequest)).thenReturn(savedTicket);
 
-		mockMvc.perform(patch(String.format(BASE_URI + "/agent/%d/solve", TICKET_ID))
+		mockMvc.perform(patch(String.format(BASE_URI + "/%d/solve", TICKET_ID))
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(objectMapper.writeValueAsString(solutionRequest)))
 				.andExpect(status().isOk())
@@ -187,7 +187,7 @@ public class TicketControllerTest {
 
 		when(ticketService.setTicketInProgress(TICKET_ID)).thenReturn(savedTicket);
 
-		mockMvc.perform(patch(String.format(BASE_URI + "/agent/%d/in-progress", TICKET_ID)))
+		mockMvc.perform(patch(String.format(BASE_URI + "/%d/in-progress", TICKET_ID)))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.id").value(TICKET_ID))
 				.andExpect(jsonPath("$.status").value(TicketStatus.IN_PROGRESS.name()))
@@ -254,7 +254,7 @@ public class TicketControllerTest {
 		void shouldReturnHttp403ForUsersNotAgentOnSolveTicketRoute() throws Exception {
 
 			mockMvc.perform(
-					patch("/api/tickets/agent/2/solve")
+					patch("/api/tickets/2/solve")
 							.contentType(MediaType.APPLICATION_JSON)
 							.content("{}"))
 					.andExpect(status().isForbidden());
@@ -266,7 +266,7 @@ public class TicketControllerTest {
 		void shouldReturnHttp403ForUsersNotAgentOnSetTicketInProgressRoute() throws Exception {
 
 			mockMvc.perform(
-					patch("/api/tickets/agent/2/in-progress"))
+					patch("/api/tickets/2/in-progress"))
 					.andExpect(status().isForbidden());
 		}
 
