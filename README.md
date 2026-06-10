@@ -46,8 +46,8 @@
 | `/api/tickets` | GET | ✅ | ✅ | ❌ |
 | `/api/tickets/{id}` | GET | ✅ | ✅ | ❌ |
 | `/api/tickets` | POST | ✅ | ✅ | ❌ |
-| `/api/tickets/agent/{id}/in-progress` | PATCH | ✅ | ❌ | ❌ |
-| `/api/tickets/agent/{id}/solve` | PATCH | ✅ | ❌ | ❌ |
+| `/api/tickets/{id}/in-progress` | PATCH | ✅ | ❌ | ❌ |
+| `/api/tickets/{id}/solve` | PATCH | ✅ | ❌ | ❌ |
 
 ## 🚀 Setup
 
@@ -97,8 +97,8 @@ docker system prune
 | GET | `/api/tickets` | List all tickets | 🔒 Required |
 | GET | `/api/tickets/{id}` | Get ticket by ID | 🔒 Required |
 | POST | `/api/tickets` | Create new ticket | 🔒 Required |
-| PATCH | `/api/tickets/agent/{id}/in-progress` | Claim ticket | 🔒 AGENT only |
-| PATCH | `/api/tickets/agent/{id}/solve` | Resolve ticket | 🔒 AGENT only |
+| PATCH | `/api/tickets/{id}/in-progress` | Claim ticket | 🔒 AGENT only |
+| PATCH | `/api/tickets/{id}/solve` | Resolve ticket | 🔒 AGENT only |
 
 ### 1. Sign In (Get JWT Token)
 
@@ -153,14 +153,14 @@ curl -X GET http://localhost:8080/api/tickets \
 ### 4. Claim Ticket (AGENT role only)
 
 ```bash
-curl -X PATCH http://localhost:8080/api/tickets/agent/1/in-progress \
+curl -X PATCH http://localhost:8080/api/tickets/1919d3eb-b889-41c2-8ee4-32b85a830fca/in-progress \
   -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIs..."
 ```
 
 ### 5. Resolve Ticket (AGENT role only)
 
 ```bash
-curl -X PATCH http://localhost:8080/api/tickets/agent/1/solve \
+curl -X PATCH http://localhost:8080/api/tickets/1919d3eb-b889-41c2-8ee4-32b85a830fca/solve \
   -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIs..." \
   -H "Content-Type: application/json" \
   -d '{
