@@ -11,7 +11,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.util.List;
-import java.util.UUID;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.DisplayName;
@@ -52,7 +51,7 @@ import com.github.loickcherimont.ticketing_api.services.TicketService;
 @Import(SecurityConfig.class)
 public class TicketControllerTest {
 
-	private static final UUID TICKET_ID = UUID.randomUUID();
+	private static final Long TICKET_ID = 2L;
 	private static final String TICKET_TITLE = "Virement bancaire non reçu";
 	private static final String TICKET_DESCRIPTION = "Le client indique qu’un virement SEPA effectué il y a 72 heures n’apparaît toujours pas sur son compte courant.";
 	private static final String TICKET_SOLUTION = "Le virement SEPA a été localisé en cours de traitement. Un délai supplémentaire de 24 à 48 heures est nécessaire en raison d'un contrôle de conformité. Le client sera notifié dès que les fonds seront crédités sur son compte courant.";
@@ -92,7 +91,7 @@ public class TicketControllerTest {
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(objectMapper.writeValueAsString(request)))
 				.andExpect(status().isCreated())
-				.andExpect(jsonPath("$.id").value(TICKET_ID.toString()))
+				.andExpect(jsonPath("$.id").value(TICKET_ID))
 				.andExpect(jsonPath("$.title").value(TICKET_TITLE))
 				.andExpect(jsonPath("$.description").value(TICKET_DESCRIPTION))
 				.andExpect(jsonPath("$.status").value(TicketStatus.OPEN.name()))
@@ -108,13 +107,13 @@ public class TicketControllerTest {
 	void shouldReturnHttp200AndAllTicketsForAuthenticatedAgentOrUser() throws Exception {
 
 		List<Ticket> tickets = List.of(
-				new Ticket(UUID.fromString("47d57b59-1859-4bba-ad68-b82240492306"),
+				new Ticket(1L,
 						"Carte bancaire bloquée",
 						"Le client signale que sa carte bancaire a été bloquée suite à 3 tentatives de code PIN erronées.",
 						TicketStatus.OPEN,
 						null),
 				new Ticket(TICKET_ID, TICKET_TITLE, TICKET_DESCRIPTION, TicketStatus.IN_PROGRESS, null),
-				new Ticket(UUID.fromString("bc17a8a6-5630-4c21-8384-53c79b300570"),
+				new Ticket(3L,
 						"Prélèvement non autorisé",
 						"Le client conteste un prélèvement de 149,99€ apparu sur son relevé de compte qu'il n'a pas autorisé.",
 						TicketStatus.CLOSED,
@@ -149,9 +148,9 @@ public class TicketControllerTest {
 
 		when(ticketService.getTicketById(TICKET_ID)).thenReturn(ticket);
 
-		mockMvc.perform(get(String.format(BASE_URI + "/%s", TICKET_ID)))
+		mockMvc.perform(get(String.format(BASE_URI + "/%d", TICKET_ID)))
 				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.id").value(TICKET_ID.toString()));
+				.andExpect(jsonPath("$.id").value(TICKET_ID));
 
 		verify(ticketService).getTicketById(TICKET_ID);
 	}
@@ -167,11 +166,11 @@ public class TicketControllerTest {
 
 		when(ticketService.solveTicket(TICKET_ID, solutionRequest)).thenReturn(savedTicket);
 
-		mockMvc.perform(patch(String.format(BASE_URI + "/%s/solve", TICKET_ID))
+		mockMvc.perform(patch(String.format(BASE_URI + "/agent/%d/solve", TICKET_ID))
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(objectMapper.writeValueAsString(solutionRequest)))
 				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.id").value(TICKET_ID.toString()))
+				.andExpect(jsonPath("$.id").value(TICKET_ID))
 				.andExpect(jsonPath("$.status").value(TicketStatus.CLOSED.name()))
 				.andExpect(jsonPath("$.solution").value(TICKET_SOLUTION));
 
@@ -188,9 +187,9 @@ public class TicketControllerTest {
 
 		when(ticketService.setTicketInProgress(TICKET_ID)).thenReturn(savedTicket);
 
-		mockMvc.perform(patch(String.format(BASE_URI + "/%s/in-progress", TICKET_ID)))
+		mockMvc.perform(patch(String.format(BASE_URI + "/agent/%d/in-progress", TICKET_ID)))
 				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.id").value(TICKET_ID.toString()))
+				.andExpect(jsonPath("$.id").value(TICKET_ID))
 				.andExpect(jsonPath("$.status").value(TicketStatus.IN_PROGRESS.name()))
 				.andExpect(jsonPath("$.solution").value(IN_PROGRESS_SOLUTION));
 
@@ -255,7 +254,7 @@ public class TicketControllerTest {
 		void shouldReturnHttp403ForUsersNotAgentOnSolveTicketRoute() throws Exception {
 
 			mockMvc.perform(
-					patch("/api/tickets/2/solve")
+					patch("/api/tickets/agent/2/solve")
 							.contentType(MediaType.APPLICATION_JSON)
 							.content("{}"))
 					.andExpect(status().isForbidden());
@@ -267,7 +266,7 @@ public class TicketControllerTest {
 		void shouldReturnHttp403ForUsersNotAgentOnSetTicketInProgressRoute() throws Exception {
 
 			mockMvc.perform(
-					patch("/api/tickets/2/in-progress"))
+					patch("/api/tickets/agent/2/in-progress"))
 					.andExpect(status().isForbidden());
 		}
 
@@ -278,11 +277,11 @@ public class TicketControllerTest {
 	@WithMockUser(roles = { "USER", "AGENT" })
 	void shouldReturnHttp404IfIdNotExists() throws Exception {
 
-		UUID UNKNOWN_TICKET_ID = UUID.randomUUID();
+		Long UNKNOWN_TICKET_ID = 99L;
 
-		when(ticketService.getTicketById(UNKNOWN_TICKET_ID)).thenThrow(new TicketNotFoundException("Ticket not found:" + UNKNOWN_TICKET_ID));
+		when(ticketService.getTicketById(UNKNOWN_TICKET_ID)).thenThrow(new TicketNotFoundException("Ticket not found: 99"));
 
-		this.mockMvc.perform(get("/api/tickets/" + UNKNOWN_TICKET_ID))
+		this.mockMvc.perform(get("/api/tickets/99"))
 				.andExpect(status().isNotFound());
 
 		verify(ticketService).getTicketById(UNKNOWN_TICKET_ID);

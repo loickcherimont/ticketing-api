@@ -41,10 +41,7 @@ public class SecurityConfig {
 										.sendError(HttpServletResponse.SC_FORBIDDEN,
 												"Accès interdit")))
 				.authorizeHttpRequests(auth -> auth
-						.requestMatchers(
-								"/api/tickets/*/solve",
-								"/api/tickets/*/in-progress")
-						.hasRole(Role.AGENT.name())
+						.requestMatchers("/api/tickets/agent/**").hasRole(Role.AGENT.name())
 						.requestMatchers(
 								"/",
 								"/index.html",

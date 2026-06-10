@@ -2,13 +2,10 @@ package com.github.loickcherimont.ticketing_api.models;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.UUID;
 
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.hibernate.annotations.Generated;
-import org.hibernate.generator.EventType;
 import org.springframework.lang.NonNull;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -32,15 +29,8 @@ import lombok.Setter;
 public class User implements UserDetails {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    @Generated(event = EventType.INSERT)
-    @Column(
-        name = "id",
-        updatable = false,
-        nullable = false,
-        columnDefinition = "UUID DEFAULT gen_random_uuid()"
-    )
-    private UUID id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
     @Column(nullable = false, unique = true, length = 100)
     private String email;
