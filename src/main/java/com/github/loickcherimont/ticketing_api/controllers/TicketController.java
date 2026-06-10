@@ -2,6 +2,7 @@ package com.github.loickcherimont.ticketing_api.controllers;
 
 import java.net.URI;
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -89,7 +90,7 @@ public class TicketController {
     @ApiResponse(responseCode = "401", description = "Unauthorized - JWT token missing or invalid")
     @ApiResponse(responseCode = "404", description = "Ticket with specified `id` not found")
     @GetMapping("/{id}")
-    public ResponseEntity<Ticket> getTicketById(@Parameter(description = "`id` of ticket") @PathVariable Long id) {
+    public ResponseEntity<Ticket> getTicketById(@Parameter(description = "`id` of ticket") @PathVariable UUID id) {
         return ResponseEntity.status(HttpStatus.OK).body(ticketService.getTicketById(id));
     }
 
@@ -107,7 +108,7 @@ public class TicketController {
     @ApiResponse(responseCode = "403", description = "Forbidden - insufficient role (AGENT role required)")
     @ApiResponse(responseCode = "404", description = "Ticket with specified `id` not found")
     @PatchMapping("/{id}/solve")
-    public ResponseEntity<Ticket> solveTicket(@PathVariable Long id,
+    public ResponseEntity<Ticket> solveTicket(@PathVariable UUID id,
             @Valid @RequestBody SolutionRequestDto solutionRequestDto) {
         return ResponseEntity.status(HttpStatus.OK).body(ticketService.solveTicket(id, solutionRequestDto));
     }
@@ -124,7 +125,7 @@ public class TicketController {
     @ApiResponse(responseCode = "403", description = "Forbidden - insufficient role (AGENT role required)")
     @ApiResponse(responseCode = "404", description = "Ticket with specified `id` not found")
     @PatchMapping("/{id}/in-progress")
-    public ResponseEntity<Ticket> setTicketInProgress(@PathVariable Long id) {
+    public ResponseEntity<Ticket> setTicketInProgress(@PathVariable UUID id) {
         return ResponseEntity.status(HttpStatus.OK).body(ticketService.setTicketInProgress(id));
     }
 }
