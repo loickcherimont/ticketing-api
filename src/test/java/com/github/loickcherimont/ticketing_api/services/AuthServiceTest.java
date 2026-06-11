@@ -6,6 +6,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.Optional;
+import java.util.UUID;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -44,7 +45,7 @@ class AuthServiceTest {
     // Centralized here: if a value changes, it only needs to be updated once.
     // -------------------------------------------------------------------------
 
-    private static final Long   ID       = 1L;
+    private static final UUID   ID       = UUID.randomUUID();
     private static final String EMAIL    = "user@gmail.com";
     private static final String PASSWORD = "test789";
     private static final String TOKEN    = "mocked-token";

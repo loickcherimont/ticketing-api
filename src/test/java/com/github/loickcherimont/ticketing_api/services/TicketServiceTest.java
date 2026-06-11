@@ -7,6 +7,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.Optional;
+import java.util.UUID;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -27,17 +28,22 @@ import com.github.loickcherimont.ticketing_api.services.impl.TicketServiceImpl;
 /**
  * Unit tests for {@link TicketServiceImpl}.
  *
- * <p>All dependencies (repository) are mocked with Mockito:
- * no database is accessed during test execution.</p>
+ * <p>
+ * All dependencies (repository) are mocked with Mockito:
+ * no database is accessed during test execution.
+ * </p>
  *
- * <p>Covered scenarios:</p>
+ * <p>
+ * Covered scenarios:
+ * </p>
  * <ul>
- *   <li>Retrieving an existing ticket by identifier</li>
- *   <li>Creating a new ticket</li>
- *   <li>Resolving a ticket (CLOSED status)</li>
- *   <li>Setting a ticket to IN_PROGRESS status</li>
- *   <li>Throwing {@link TicketNotFoundException} for an unknown id</li>
- *   <li>Throwing {@link TicketExistingTitleException} for an already existing title</li>
+ * <li>Retrieving an existing ticket by identifier</li>
+ * <li>Creating a new ticket</li>
+ * <li>Resolving a ticket (CLOSED status)</li>
+ * <li>Setting a ticket to IN_PROGRESS status</li>
+ * <li>Throwing {@link TicketNotFoundException} for an unknown id</li>
+ * <li>Throwing {@link TicketExistingTitleException} for an already existing
+ * title</li>
  * </ul>
  */
 @ExtendWith(MockitoExtension.class)
@@ -48,13 +54,11 @@ class TicketServiceTest {
     // Centralized here: if a value changes, it only needs to be updated once.
     // -------------------------------------------------------------------------
 
-    private static final Long   TICKET_ID    = 2L;
+    private static final UUID TICKET_ID = UUID.randomUUID();
     private static final String TICKET_TITLE = "Virement bancaire non reçu";
-    private static final String TICKET_DESC  =
-            "Le client indique qu'un virement SEPA effectué il y a 72 heures "
+    private static final String TICKET_DESC = "Le client indique qu'un virement SEPA effectué il y a 72 heures "
             + "n'apparaît toujours pas sur son compte courant.";
-    private static final String TICKET_SOLUTION =
-            "Le virement SEPA a été localisé en cours de traitement. "
+    private static final String TICKET_SOLUTION = "Le virement SEPA a été localisé en cours de traitement. "
             + "Un délai supplémentaire de 24 à 48 heures est nécessaire en raison "
             + "d'un contrôle de conformité. Le client sera notifié dès que les fonds "
             + "seront crédités sur son compte courant.";
@@ -134,7 +138,10 @@ class TicketServiceTest {
     @DisplayName("setTicketInProgress: should return ticket with IN_PROGRESS status")
     void shouldReturnTicketWithInProgressStatus() {
 
-        Ticket savedTicket = new Ticket(TICKET_ID, TICKET_TITLE, TICKET_DESC, TicketStatus.IN_PROGRESS, "Ticket 2 en cours");
+        String inProgressSolution = String.format("Ticket %s en cours", TICKET_ID);
+
+        Ticket savedTicket = new Ticket(TICKET_ID, TICKET_TITLE, TICKET_DESC, TicketStatus.IN_PROGRESS,
+                inProgressSolution);
 
         when(ticketRepository.findById(TICKET_ID)).thenReturn(Optional.of(savedTicket));
         when(ticketRepository.save(any(Ticket.class))).thenReturn(savedTicket);
@@ -143,7 +150,7 @@ class TicketServiceTest {
 
         assertThat(result.getId()).isEqualTo(TICKET_ID);
         assertThat(result.getStatus()).isEqualTo(TicketStatus.IN_PROGRESS);
-        assertThat(result.getSolution()).isEqualTo("Ticket 2 en cours");
+        assertThat(result.getSolution()).isEqualTo(inProgressSolution);
         verify(ticketRepository).findById(TICKET_ID);
         verify(ticketRepository).save(any(Ticket.class));
     }
@@ -156,28 +163,35 @@ class TicketServiceTest {
      * Verifies that {@link TicketNotFoundException} is thrown when the requested
      * identifier does not exist in the database.
      *
-     * <p>The error message must contain the provided identifier so that
-     * callers (controllers, logs) can quickly identify the missing ticket.</p>
+     * <p>
+     * The error message must contain the provided identifier so that
+     * callers (controllers, logs) can quickly identify the missing ticket.
+     * </p>
      */
     @Test
     @DisplayName("getTicketById: should throw TicketNotFoundException when identifier is unknown")
     void shouldThrowTicketNotFoundExceptionWhenIdDoesNotExist() {
 
-        when(ticketRepository.findById(99L)).thenReturn(Optional.empty());
+        UUID UNKNOWN_TICKET_ID = UUID.randomUUID();
+        String notFoundMessage = String.format("Ticket %s introuvable", UNKNOWN_TICKET_ID);
 
-        assertThatThrownBy(() -> ticketService.getTicketById(99L))
+        when(ticketRepository.findById(UNKNOWN_TICKET_ID)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> ticketService.getTicketById(UNKNOWN_TICKET_ID))
                 .isInstanceOf(TicketNotFoundException.class)
-                .hasMessage("Ticket 99 introuvable");
+                .hasMessage(notFoundMessage);
 
-        verify(ticketRepository).findById(99L);
+        verify(ticketRepository).findById(UNKNOWN_TICKET_ID);
     }
 
     /**
      * Verifies that {@link TicketExistingTitleException} is thrown when a ticket
      * with the same title already exists.
      *
-     * <p>The title is trimmed in the service layer. This test ensures that
-     * the repository validation is performed using the sanitized value.</p>
+     * <p>
+     * The title is trimmed in the service layer. This test ensures that
+     * the repository validation is performed using the sanitized value.
+     * </p>
      */
     @Test
     @DisplayName("createTicket: should throw TicketExistingTitleException when title is already used")
