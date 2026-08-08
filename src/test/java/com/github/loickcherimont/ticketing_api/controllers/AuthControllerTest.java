@@ -17,16 +17,14 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.loickcherimont.ticketing_api.configuration.SecurityConfig;
 import com.github.loickcherimont.ticketing_api.dto.SigninRequestDto;
 import com.github.loickcherimont.ticketing_api.dto.SigninResponseDto;
 import com.github.loickcherimont.ticketing_api.models.Role;
@@ -36,14 +34,9 @@ import com.github.loickcherimont.ticketing_api.services.JwtService;
 /**
  * Web MVC tests for {@link AuthController}.
  *
- * <p>
- * Security configuration is imported using
- * {@code @Import(SecurityConfig.class)}
- * so that the authentication rules are evaluated during the MVC slice.
- * </p>
  */
 @WebMvcTest(AuthController.class)
-@Import(SecurityConfig.class)
+@AutoConfigureMockMvc(addFilters = false) // don't execute Filter beans from context during test (remove security)
 public class AuthControllerTest {
 
         private static final String BASE_URI_PATH = "/api/auth/signin";
@@ -64,13 +57,6 @@ public class AuthControllerTest {
 
         @MockitoBean
         private UserDetailsService userDetailsService;
-
-        @MockitoBean
-        private PasswordEncoder passwordEncoder;
-
-        // Add any other beans that SecurityConfig depends on, such as:
-        // @MockitoBean
-        // private JwtAuthenticationFilter jwtAuthenticationFilter;
 
         // -------------------------------------------------------------------------
         // Tests — happy paths
