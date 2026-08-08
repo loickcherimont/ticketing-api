@@ -21,6 +21,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -36,7 +37,8 @@ import com.github.loickcherimont.ticketing_api.services.JwtService;
  * Web MVC tests for {@link AuthController}.
  *
  * <p>
- * Security configuration is imported using {@code @Import(SecurityConfig.class)}
+ * Security configuration is imported using
+ * {@code @Import(SecurityConfig.class)}
  * so that the authentication rules are evaluated during the MVC slice.
  * </p>
  */
@@ -63,102 +65,109 @@ public class AuthControllerTest {
         @MockitoBean
         private UserDetailsService userDetailsService;
 
-    // -------------------------------------------------------------------------
-    // Tests — happy paths
-    // -------------------------------------------------------------------------
+        @MockitoBean
+        private PasswordEncoder passwordEncoder;
 
-    @Test
-    @DisplayName("signin: should return HTTP 200 OK for valid request (email, password)")
-    void shouldReturnHttp200WithSigninResponseDto() throws Exception {
+        // Add any other beans that SecurityConfig depends on, such as:
+        // @MockitoBean
+        // private JwtAuthenticationFilter jwtAuthenticationFilter;
 
-        SigninRequestDto signinRequestDto = new SigninRequestDto(EMAIL, PASSWORD);
+        // -------------------------------------------------------------------------
+        // Tests — happy paths
+        // -------------------------------------------------------------------------
 
-        SigninResponseDto signinResponseDto = new SigninResponseDto("mocked-token", EMAIL, Role.USER);
+        @Test
+        @DisplayName("signin: should return HTTP 200 OK for valid request (email, password)")
+        void shouldReturnHttp200WithSigninResponseDto() throws Exception {
 
-        when(authService.signin(any(SigninRequestDto.class))).thenReturn(signinResponseDto);
+                SigninRequestDto signinRequestDto = new SigninRequestDto(EMAIL, PASSWORD);
 
-        this.mockMvc.perform(
-                post(BASE_URI_PATH)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(signinRequestDto)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.token").value("mocked-token"))
-                .andExpect(jsonPath("$.email").value(EMAIL))
-                .andExpect(jsonPath("$.role").value(Role.USER.name()));
+                SigninResponseDto signinResponseDto = new SigninResponseDto("mocked-token", EMAIL, Role.USER);
 
-        verify(authService).signin(any(SigninRequestDto.class));
-    }
+                when(authService.signin(any(SigninRequestDto.class))).thenReturn(signinResponseDto);
 
-    // -------------------------------------------------------------------------
-    // Tests — error scenarios (edge cases)
-    // -------------------------------------------------------------------------
+                this.mockMvc.perform(
+                                post(BASE_URI_PATH)
+                                                .contentType(MediaType.APPLICATION_JSON)
+                                                .content(objectMapper.writeValueAsString(signinRequestDto)))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.token").value("mocked-token"))
+                                .andExpect(jsonPath("$.email").value(EMAIL))
+                                .andExpect(jsonPath("$.role").value(Role.USER.name()));
 
-    @ParameterizedTest
-    @NullAndEmptySource
-    @ValueSource(strings = { " ", "\n", "\t", "\r" })
-    @DisplayName("signin: should return HTTP 400 Bad Request when email is blank")
-    void shouldReturnHttp400WhenEmailIsBlank(String email) throws Exception {
-        SigninRequestDto signinRequestDto = new SigninRequestDto(email, "secret-password");
+                verify(authService).signin(any(SigninRequestDto.class));
+        }
 
-        this.mockMvc.perform(
-                post(BASE_URI_PATH)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(signinRequestDto)))
-                .andExpect(status().isBadRequest());
-    }
+        // -------------------------------------------------------------------------
+        // Tests — error scenarios (edge cases)
+        // -------------------------------------------------------------------------
 
-    @ParameterizedTest
-    @NullAndEmptySource
-    @ValueSource(strings = { " ", "\n", "\t", "\r" })
-    @DisplayName("signin: should return HTTP 400 Bad Request when password is blank")
-    void shouldReturnHttp400WhenPasswordIsBlank(String password) throws Exception {
-        SigninRequestDto signinRequestDto = new SigninRequestDto("user@gmail.com", password);
+        @ParameterizedTest
+        @NullAndEmptySource
+        @ValueSource(strings = { " ", "\n", "\t", "\r" })
+        @DisplayName("signin: should return HTTP 400 Bad Request when email is blank")
+        void shouldReturnHttp400WhenEmailIsBlank(String email) throws Exception {
+                SigninRequestDto signinRequestDto = new SigninRequestDto(email, "secret-password");
 
-        this.mockMvc.perform(
-                post(BASE_URI_PATH)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(signinRequestDto)))
-                .andExpect(status().isBadRequest());
-    }
+                this.mockMvc.perform(
+                                post(BASE_URI_PATH)
+                                                .contentType(MediaType.APPLICATION_JSON)
+                                                .content(objectMapper.writeValueAsString(signinRequestDto)))
+                                .andExpect(status().isBadRequest());
+        }
 
-    @ParameterizedTest(name = "[{index}] email=''{0}'' password=''{1}'' should return HTTP 400 Bad Request")
-    @MethodSource("blankInputs")
-    @DisplayName("signin: should return HTTP 400 Bad Request when email and password are blank")
-    void shouldReturnHttp400WhenAllSigninFieldsAreBlank(String email, String password) throws Exception {
-        SigninRequestDto signinRequestDto = new SigninRequestDto(email, password);
+        @ParameterizedTest
+        @NullAndEmptySource
+        @ValueSource(strings = { " ", "\n", "\t", "\r" })
+        @DisplayName("signin: should return HTTP 400 Bad Request when password is blank")
+        void shouldReturnHttp400WhenPasswordIsBlank(String password) throws Exception {
+                SigninRequestDto signinRequestDto = new SigninRequestDto("user@gmail.com", password);
 
-        this.mockMvc.perform(
-                post(BASE_URI_PATH)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(signinRequestDto)))
-                .andExpect(status().isBadRequest());
-    }
+                this.mockMvc.perform(
+                                post(BASE_URI_PATH)
+                                                .contentType(MediaType.APPLICATION_JSON)
+                                                .content(objectMapper.writeValueAsString(signinRequestDto)))
+                                .andExpect(status().isBadRequest());
+        }
 
-    /**
-     * 
-     * Method containing in Stream all blank cases.
-     * 
-     * @return Stream of null, "", "valide", " ".
-     */
-    static Stream<Arguments> blankInputs() {
+        @ParameterizedTest(name = "[{index}] email=''{0}'' password=''{1}'' should return HTTP 400 Bad Request")
+        @MethodSource("blankInputs")
+        @DisplayName("signin: should return HTTP 400 Bad Request when email and password are blank")
+        void shouldReturnHttp400WhenAllSigninFieldsAreBlank(String email, String password) throws Exception {
+                SigninRequestDto signinRequestDto = new SigninRequestDto(email, password);
 
-        return Stream.of(
-                Arguments.of(null, null),
-                Arguments.of(null, ""),
-                Arguments.of(null, " "),
-                Arguments.of(null, "secret-password"),
-                Arguments.of("", null),
-                Arguments.of("", ""),
-                Arguments.of("", " "),
-                Arguments.of("", "secret-password"),
-                Arguments.of(" ", null),
-                Arguments.of(" ", ""),
-                Arguments.of(" ", " "),
-                Arguments.of(" ", "secret-password"),
-                Arguments.of("user@gmail.com", null),
-                Arguments.of("user@gmail.com", ""),
-                Arguments.of("user@gmail.com", " "));
+                this.mockMvc.perform(
+                                post(BASE_URI_PATH)
+                                                .contentType(MediaType.APPLICATION_JSON)
+                                                .content(objectMapper.writeValueAsString(signinRequestDto)))
+                                .andExpect(status().isBadRequest());
+        }
 
-    }
+        /**
+         * 
+         * Method containing in Stream all blank cases.
+         * 
+         * @return Stream of null, "", "valide", " ".
+         */
+        static Stream<Arguments> blankInputs() {
+
+                return Stream.of(
+                                Arguments.of(null, null),
+                                Arguments.of(null, ""),
+                                Arguments.of(null, " "),
+                                Arguments.of(null, "secret-password"),
+                                Arguments.of("", null),
+                                Arguments.of("", ""),
+                                Arguments.of("", " "),
+                                Arguments.of("", "secret-password"),
+                                Arguments.of(" ", null),
+                                Arguments.of(" ", ""),
+                                Arguments.of(" ", " "),
+                                Arguments.of(" ", "secret-password"),
+                                Arguments.of("user@gmail.com", null),
+                                Arguments.of("user@gmail.com", ""),
+                                Arguments.of("user@gmail.com", " "));
+
+        }
 
 }
