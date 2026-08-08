@@ -21,6 +21,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -37,6 +38,7 @@ import com.github.loickcherimont.ticketing_api.services.JwtService;
  */
 @WebMvcTest(AuthController.class)
 @AutoConfigureMockMvc(addFilters = false) // don't execute Filter beans from context during test (remove security)
+@ActiveProfiles("test")
 public class AuthControllerTest {
 
         private static final String BASE_URI_PATH = "/api/auth/signin";
