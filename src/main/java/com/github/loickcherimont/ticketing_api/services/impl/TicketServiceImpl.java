@@ -96,7 +96,6 @@ public class TicketServiceImpl implements TicketService {
     public Ticket setTicketInProgress(UUID id) {
         Ticket existingTicket = getTicketById(id);
         existingTicket.setStatus(TicketStatus.IN_PROGRESS);
-        existingTicket.setSolution("Ticket " + existingTicket.getId() + " en cours");
         return ticketRepository.save(existingTicket);
     }
 

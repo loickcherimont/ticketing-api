@@ -135,13 +135,11 @@ class TicketServiceTest {
     }
 
     @Test
-    @DisplayName("setTicketInProgress: should return ticket with IN_PROGRESS status")
+    @DisplayName("setTicketInProgress: should return ticket with IN_PROGRESS status and no solution")
     void shouldReturnTicketWithInProgressStatus() {
 
-        String inProgressSolution = String.format("Ticket %s en cours", TICKET_ID);
-
         Ticket savedTicket = new Ticket(TICKET_ID, TICKET_TITLE, TICKET_DESC, TicketStatus.IN_PROGRESS,
-                inProgressSolution);
+                null);
 
         when(ticketRepository.findById(TICKET_ID)).thenReturn(Optional.of(savedTicket));
         when(ticketRepository.save(any(Ticket.class))).thenReturn(savedTicket);
@@ -150,7 +148,7 @@ class TicketServiceTest {
 
         assertThat(result.getId()).isEqualTo(TICKET_ID);
         assertThat(result.getStatus()).isEqualTo(TicketStatus.IN_PROGRESS);
-        assertThat(result.getSolution()).isEqualTo(inProgressSolution);
+        assertThat(result.getSolution()).isNull();
         verify(ticketRepository).findById(TICKET_ID);
         verify(ticketRepository).save(any(Ticket.class));
     }

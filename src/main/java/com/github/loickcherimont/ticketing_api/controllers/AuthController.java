@@ -46,7 +46,7 @@ public class AuthController {
      *                        Automatically validated by Spring (@Valid annotation)
      * @return ResponseEntity with HTTP 200 OK and SigninResponseDto body containing JWT token
      * @throws com.github.loickcherimont.ticketing_api.exceptions.InvalidCredentialsException
-     *         if email not found or password incorrect (converted to HTTP 401 by @ResponseStatus)
+     *         if email not found or password incorrect (converted to HTTP 401 by {@link com.github.loickcherimont.ticketing_api.exceptions.GlobalExceptionHandler})
      *
      * @see SigninRequestDto
      * @see SigninResponseDto
