@@ -28,6 +28,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.loickcherimont.ticketing_api.dto.SigninRequestDto;
 import com.github.loickcherimont.ticketing_api.dto.SigninResponseDto;
+import com.github.loickcherimont.ticketing_api.exceptions.InvalidCredentialsException;
 import com.github.loickcherimont.ticketing_api.models.Role;
 import com.github.loickcherimont.ticketing_api.services.AuthService;
 import com.github.loickcherimont.ticketing_api.services.JwtService;
@@ -156,6 +157,23 @@ public class AuthControllerTest {
                                 Arguments.of("user@gmail.com", ""),
                                 Arguments.of("user@gmail.com", " "));
 
+        }
+
+        @Test
+        @DisplayName("signin: should return HTTP 401 Unauthorized for invalid credentials (email, password)")
+        void shouldReturnHttp401WhenCredentialsAreInvalid() throws Exception {
+
+                SigninRequestDto signinRequestDto = new SigninRequestDto("wrong-email@gmail.com", "wrong-password");
+
+                when(authService.signin(signinRequestDto)).thenThrow(InvalidCredentialsException.class);
+
+                this.mockMvc.perform(
+                                post(BASE_URI_PATH)
+                                                .contentType(MediaType.APPLICATION_JSON)
+                                                .content(objectMapper.writeValueAsString(signinRequestDto)))
+                                .andExpect(status().isUnauthorized());
+
+                verify(authService).signin(signinRequestDto);
         }
 
 }

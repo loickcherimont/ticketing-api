@@ -61,7 +61,6 @@ public class TicketControllerTest {
 	private static final String TICKET_TITLE = "Virement bancaire non reçu";
 	private static final String TICKET_DESCRIPTION = "Le client indique qu’un virement SEPA effectué il y a 72 heures n’apparaît toujours pas sur son compte courant.";
 	private static final String TICKET_SOLUTION = "Le virement SEPA a été localisé en cours de traitement. Un délai supplémentaire de 24 à 48 heures est nécessaire en raison d'un contrôle de conformité. Le client sera notifié dès que les fonds seront crédités sur son compte courant.";
-	private static final String IN_PROGRESS_SOLUTION = "Ticket 2 en cours";
 	private static final String BASE_URI = "/api/tickets";
 
 	@Autowired
@@ -201,7 +200,7 @@ public class TicketControllerTest {
 	void shouldReturnHttp200WithTicketInProgressStatus() throws Exception {
 
 		Ticket savedTicket = new Ticket(TICKET_ID, TICKET_TITLE, TICKET_DESCRIPTION, TicketStatus.IN_PROGRESS,
-				IN_PROGRESS_SOLUTION);
+				null);
 
 		when(ticketService.setTicketInProgress(TICKET_ID)).thenReturn(savedTicket);
 
@@ -209,7 +208,7 @@ public class TicketControllerTest {
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.id").value(TICKET_ID.toString()))
 				.andExpect(jsonPath("$.status").value(TicketStatus.IN_PROGRESS.name()))
-				.andExpect(jsonPath("$.solution").value(IN_PROGRESS_SOLUTION));
+				.andExpect(jsonPath("$.solution").isEmpty());
 
 		verify(ticketService).setTicketInProgress(TICKET_ID);
 	}
@@ -321,6 +320,20 @@ public class TicketControllerTest {
 	void shouldReturnHttp400IfNewTicketFieldsAreBlank(String title, String description) throws Exception {
 
 		TicketRequestDto badRequestDto = new TicketRequestDto(title, description);
+
+		this.mockMvc.perform(
+				post("/api/tickets")
+						.contentType(MediaType.APPLICATION_JSON)
+						.content(objectMapper.writeValueAsString(badRequestDto)))
+				.andExpect(status().isBadRequest());
+	}
+
+	@Test
+	@DisplayName("createTicket: should return HTTP 400 Bad Request when title exceeds 100 characters")
+	@WithMockUser(roles = { "USER", "AGENT" })
+	void shouldReturnHttp400WhenTitleExceedsMaxLength() throws Exception {
+
+		TicketRequestDto badRequestDto = new TicketRequestDto("T".repeat(101), TICKET_DESCRIPTION);
 
 		this.mockMvc.perform(
 				post("/api/tickets")
