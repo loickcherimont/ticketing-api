@@ -1,0 +1,53 @@
+name: Java CI with Maven and Docker
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Make wrapper executable
+        run: chmod +x mvnw
+
+      # 1. Compilation, tests, packaging du JAR et vérification de couverture (JaCoCo)
+      - name: Build, test, package and verify with Maven
+        run: ./mvnw clean verify
+
+      # 2. Sauvegarde du rapport HTML JaCoCo comme artefact téléchargeable dans GitHub Actions
+      - name: Upload JaCoCo Coverage Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-coverage-report
+          path: target/site/jacoco/
+
+      # =========================================================================
+      # ÉTAPE DOCKER : Validation du livrable de production
+      # =========================================================================
+
+      # Configurer le moteur Docker Buildx (permet des builds Docker modernes et rapides)
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Exécuter le Dockerfile du projet pour s'assurer que l'image conteneurisée se construit sans erreur.
+      # 'push: false' signifie : "Exécute tout le build Docker pour tester, mais ne l'envoie pas sur un registre distant".
+      - name: Build Docker Image (Dry Run Check)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          tags: ticketing-api:latest

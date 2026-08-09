@@ -1,6 +1,7 @@
 package com.github.loickcherimont.ticketing_api.controllers;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -15,6 +16,7 @@ import java.util.UUID;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -34,10 +36,13 @@ import com.github.loickcherimont.ticketing_api.configuration.SecurityConfig;
 import com.github.loickcherimont.ticketing_api.dto.SolutionRequestDto;
 import com.github.loickcherimont.ticketing_api.dto.TicketRequestDto;
 import com.github.loickcherimont.ticketing_api.exceptions.TicketNotFoundException;
+import com.github.loickcherimont.ticketing_api.filter.JwtAuthenticationFilter;
 import com.github.loickcherimont.ticketing_api.models.Ticket;
 import com.github.loickcherimont.ticketing_api.models.TicketStatus;
 import com.github.loickcherimont.ticketing_api.services.JwtService;
 import com.github.loickcherimont.ticketing_api.services.TicketService;
+
+import jakarta.servlet.FilterChain;
 
 /**
  * Web MVC tests for {@link TicketController}.
@@ -73,6 +78,18 @@ public class TicketControllerTest {
 
 	@MockitoBean
 	private UserDetailsService userDetailsService;
+
+	@MockitoBean
+	private JwtAuthenticationFilter jwtAuthenticationFilter;
+
+	@BeforeEach
+	void allowJwtFilterChainToContinue() throws Exception {
+		doAnswer(invocation -> {
+			FilterChain filterChain = invocation.getArgument(2);
+			filterChain.doFilter(invocation.getArgument(0), invocation.getArgument(1));
+			return null;
+		}).when(jwtAuthenticationFilter).doFilter(any(), any(), any());
+	}
 
 	// -------------------------------------------------------------------------
 	// Tests — happy paths
@@ -229,7 +246,7 @@ public class TicketControllerTest {
 		void shouldReturnHttp401ForAnonymousAgentOnSolveTicketRoute() throws Exception {
 
 			mockMvc.perform(
-					patch("/api/tickets/agent/2/solve")
+					patch("/api/tickets/" + TICKET_ID + "/solve")
 							.contentType(MediaType.APPLICATION_JSON)
 							.content("{}"))
 					.andExpect(status().isUnauthorized());
@@ -240,7 +257,7 @@ public class TicketControllerTest {
 		void shouldReturnHttp401ForAnonymousAgentOnSetTicketInProgressRoute() throws Exception {
 
 			mockMvc.perform(
-					patch("/api/tickets/agent/2/in-progress"))
+					patch("/api/tickets/" + TICKET_ID + "/in-progress"))
 					.andExpect(status().isUnauthorized());
 		}
 	}
@@ -255,7 +272,7 @@ public class TicketControllerTest {
 		void shouldReturnHttp403ForUsersNotAgentOnSolveTicketRoute() throws Exception {
 
 			mockMvc.perform(
-					patch("/api/tickets/2/solve")
+					patch("/api/tickets/" + TICKET_ID + "/solve")
 							.contentType(MediaType.APPLICATION_JSON)
 							.content("{}"))
 					.andExpect(status().isForbidden());
@@ -267,7 +284,7 @@ public class TicketControllerTest {
 		void shouldReturnHttp403ForUsersNotAgentOnSetTicketInProgressRoute() throws Exception {
 
 			mockMvc.perform(
-					patch("/api/tickets/2/in-progress"))
+					patch("/api/tickets/" + TICKET_ID + "/in-progress"))
 					.andExpect(status().isForbidden());
 		}
 

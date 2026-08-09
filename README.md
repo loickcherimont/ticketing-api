@@ -168,6 +168,57 @@ curl -X PATCH http://localhost:8080/api/tickets/1919d3eb-b889-41c2-8ee4-32b85a83
   }'
 ```
 
+## 🔄 CI/CD & Code Quality Pipeline
+
+This project enforces automated continuous integration and code quality standards using **GitHub Actions**, **JaCoCo**, and **Docker**.
+
+### Pipeline Workflow (`.github/workflows/ci.yml`)
+
+Every `push` or `pull_request` to `main` automatically triggers a multi-step pipeline running on `ubuntu-latest`:
+
+1. **Build & Test (`./mvnw clean verify`)**:
+   - Sets up **JDK 21** with automatic Maven dependency caching (`~/.m2`).
+   - Compiles Java source files and runs all **JUnit 5 + Mockito** unit tests.
+   - Packages the executable Spring Boot Fat JAR.
+2. **Quality Gate Enforcement (`jacoco:check`)**:
+   - Measures line coverage using **JaCoCo**.
+   - Enforces a minimum **45% line coverage ratio** on core application logic.
+   - Excludes non-business classes (DTOs and `configuration/*`) from coverage thresholds.
+   - Automatically fails the build (`BUILD FAILURE`) if test coverage drops below the required limit.
+3. **Coverage Report Artifact**:
+   - Uploads the full HTML coverage report (`target/site/jacoco/`) as a downloadable ZIP artifact in GitHub Actions.
+4. **Docker Container Build Validation**:
+   - Runs `docker/build-push-action` with `push: false` to verify that the [Dockerfile](Dockerfile) builds cleanly in an isolated Alpine environment before any deployment.
+
+### JaCoCo Quality Gate Configuration (`pom.xml`)
+
+```xml
+<execution>
+    <id>check</id>
+    <goals>
+        <goal>check</goal>
+    </goals>
+    <configuration>
+        <rules>
+            <rule>
+                <element>BUNDLE</element>
+                <limits>
+                    <limit>
+                        <counter>LINE</counter>
+                        <value>COVEREDRATIO</value>
+                        <minimum>0.45</minimum> <!-- 45% minimum line coverage threshold -->
+                    </limit>
+                </limits>
+            </rule>
+        </rules>
+        <excludes>
+            <exclude>com/github/loickcherimont/ticketing_api/dto/*</exclude>
+            <exclude>com/github/loickcherimont/ticketing_api/configuration/*</exclude>
+        </excludes>
+    </configuration>
+</execution>
+```
+
 ## 📄 API Documentation
 
 **Full interactive documentation on Railway** with request/response examples:
