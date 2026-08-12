@@ -62,7 +62,7 @@ cd ticketing-api
 docker compose up -d db
 
 # 3. Run the API with Maven
-./mvnw spring-boot:run
+SPRING_PROFILES_ACTIVE=dev ./mvnw spring-boot:run
 
 # API is now running on http://localhost:8080
 ``` 
