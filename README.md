@@ -226,6 +226,10 @@ Every `push` or `pull_request` to `main` automatically triggers a multi-step pip
 
 ![Preview API documentation](.github/endpoints-docs.png 'API docs with Swagger UI | Ticket API')
 
+## Live Demo
+
+For complete live demo (entire website) consult the frontend README : https://github.com/loickcherimont/ticketing-web-v2/blob/main/README.md
+
 ## 🔑 License
 
 <div align="center">Copyright &copy; 2026 | Loick CHERIMONT | All Rights Reserved.</div>
