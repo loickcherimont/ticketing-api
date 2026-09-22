@@ -4,6 +4,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -15,6 +16,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Stream;
 
+import com.github.loickcherimont.ticketing_api.models.User;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -37,6 +39,7 @@ import com.github.loickcherimont.ticketing_api.dto.SolutionRequestDto;
 import com.github.loickcherimont.ticketing_api.dto.TicketRequestDto;
 import com.github.loickcherimont.ticketing_api.exceptions.TicketNotFoundException;
 import com.github.loickcherimont.ticketing_api.filter.JwtAuthenticationFilter;
+import com.github.loickcherimont.ticketing_api.models.Role;
 import com.github.loickcherimont.ticketing_api.models.Ticket;
 import com.github.loickcherimont.ticketing_api.models.TicketStatus;
 import com.github.loickcherimont.ticketing_api.services.JwtService;
@@ -52,6 +55,13 @@ import jakarta.servlet.FilterChain;
  * {@code @Import(SecurityConfig.class)} so that
  * role-based access rules are evaluated during the MVC slice.
  * </p>
+ *
+ * <p>
+ * Authenticated requests use {@link SecurityMockMvcRequestPostProcessors#user}
+ * so that the {@code principal} is the application {@link User} entity
+ * (like the production JWT filter does), making {@code @AuthenticationPrincipal}
+ * resolution realistic.
+ * </p>
  */
 @WebMvcTest(TicketController.class)
 @Import(SecurityConfig.class)
@@ -61,6 +71,10 @@ public class TicketControllerTest {
 	private static final String TICKET_TITLE = "Virement bancaire non reçu";
 	private static final String TICKET_DESCRIPTION = "Le client indique qu’un virement SEPA effectué il y a 72 heures n’apparaît toujours pas sur son compte courant.";
 	private static final String TICKET_SOLUTION = "Le virement SEPA a été localisé en cours de traitement. Un délai supplémentaire de 24 à 48 heures est nécessaire en raison d'un contrôle de conformité. Le client sera notifié dès que les fonds seront crédités sur son compte courant.";
+	private static final User TICKET_CREATED_BY = new User(
+			UUID.randomUUID(), "client@banque.fr", "password", Role.USER);
+	private static final User TICKET_ASSIGNED_TO = new User(
+			UUID.randomUUID(), "agent@banque.fr", "password", Role.AGENT);
 	private static final String BASE_URI = "/api/tickets";
 
 	@Autowired
@@ -96,15 +110,16 @@ public class TicketControllerTest {
 
 	@Test
 	@DisplayName("createTicket: should return HTTP 201 Created for authenticated AGENT or USER")
-	@WithMockUser(roles = { "USER", "AGENT" })
 	void shouldReturnHttp201WithNewCreatedTicket() throws Exception {
 
 		TicketRequestDto request = new TicketRequestDto(TICKET_TITLE, TICKET_DESCRIPTION);
-		Ticket savedTicket = new Ticket(TICKET_ID, TICKET_TITLE, TICKET_DESCRIPTION, TicketStatus.OPEN, null);
+		Ticket savedTicket = new Ticket(TICKET_ID, TICKET_TITLE, TICKET_DESCRIPTION, TicketStatus.OPEN, null,
+				TICKET_CREATED_BY, null);
 
-		when(ticketService.createTicket(any(TicketRequestDto.class))).thenReturn(savedTicket);
+		when(ticketService.createTicket(any(TicketRequestDto.class), any(User.class))).thenReturn(savedTicket);
 
 		mockMvc.perform(post(BASE_URI)
+				.with(user(TICKET_CREATED_BY))
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(objectMapper.writeValueAsString(request)))
 				.andExpect(status().isCreated())
@@ -114,36 +129,32 @@ public class TicketControllerTest {
 				.andExpect(jsonPath("$.status").value(TicketStatus.OPEN.name()))
 				.andExpect(jsonPath("$.solution").isEmpty());
 
-		verify(ticketService).createTicket(any(TicketRequestDto.class));
-
+		verify(ticketService).createTicket(any(TicketRequestDto.class), any(User.class));
 	}
 
 	@Test
-	@DisplayName("getAllTickets: should return HTTP 200 OK for authenticated AGENT or USER")
-	@WithMockUser(roles = { "USER", "AGENT" })
-	void shouldReturnHttp200AndAllTicketsForAuthenticatedAgentOrUser() throws Exception {
+	@DisplayName("getAllTickets: should return HTTP 200 OK for authenticated AGENT")
+	void shouldReturnHttp200AndAllTicketsForAuthenticatedAgent() throws Exception {
 
 		List<Ticket> tickets = List.of(
 				new Ticket(UUID.fromString("47d57b59-1859-4bba-ad68-b82240492306"),
 						"Carte bancaire bloquée",
 						"Le client signale que sa carte bancaire a été bloquée suite à 3 tentatives de code PIN erronées.",
 						TicketStatus.OPEN,
-						null),
-				new Ticket(TICKET_ID, TICKET_TITLE, TICKET_DESCRIPTION, TicketStatus.IN_PROGRESS, null),
+						null, TICKET_CREATED_BY, null),
+				new Ticket(TICKET_ID, TICKET_TITLE, TICKET_DESCRIPTION, TicketStatus.IN_PROGRESS,
+						null, TICKET_CREATED_BY, TICKET_ASSIGNED_TO),
 				new Ticket(UUID.fromString("bc17a8a6-5630-4c21-8384-53c79b300570"),
 						"Prélèvement non autorisé",
 						"Le client conteste un prélèvement de 149,99€ apparu sur son relevé de compte qu'il n'a pas autorisé.",
 						TicketStatus.CLOSED,
-						"Après vérification, le prélèvement a été identifié comme frauduleux et remboursé intégralement sous 48 heures. Une nouvelle carte bancaire a été émise et envoyée à l'adresse du client."));
+						"Après vérification, le prélèvement a été identifié comme frauduleux et remboursé "
+								+ "intégralement sous 48 heures. Une nouvelle carte bancaire a été émise et envoyée à "
+								+ "l'adresse du client.", TICKET_CREATED_BY, TICKET_ASSIGNED_TO));
 
-		when(ticketService.getAllTickets()).thenReturn(tickets);
+		when(ticketService.getAllTickets(TICKET_ASSIGNED_TO)).thenReturn(tickets);
 
-		/**
-		 * We test that the list contains ticket, by checking only on 1 object ($[0])
-		 * And we deduce with Java language properties
-		 * The list contains only tickets of that form
-		 */
-		mockMvc.perform(get(BASE_URI))
+		mockMvc.perform(get(BASE_URI).with(user(TICKET_ASSIGNED_TO)))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$").isArray())
 				.andExpect(jsonPath("$.length()").value(tickets.size()))
@@ -153,23 +164,51 @@ public class TicketControllerTest {
 				.andExpect(jsonPath("$[0].status").exists())
 				.andExpect(jsonPath("$[0].solution").isEmpty());
 
-		verify(ticketService).getAllTickets();
+		verify(ticketService).getAllTickets(TICKET_ASSIGNED_TO);
 	}
 
 	@Test
-	@DisplayName("getTicketById: should return HTTP 200 OK for authenticated AGENT or USER")
-	@WithMockUser(roles = { "USER", "AGENT" })
+	@DisplayName("getAllTickets: should return HTTP 200 OK for authenticated USER with his tickets only")
+	void shouldReturnHttp200AndAllTicketsCreatedByAuthenticatedUser() throws Exception {
+
+		List<Ticket> tickets = List.of(
+				new Ticket(UUID.fromString("47d57b59-1859-4bba-ad68-b82240492306"),
+						"Carte bancaire bloquée",
+						"Le client signale que sa carte bancaire a été bloquée suite à 3 tentatives de code PIN erronées.",
+						TicketStatus.OPEN,
+						null, TICKET_CREATED_BY, null),
+				new Ticket(TICKET_ID, TICKET_TITLE, TICKET_DESCRIPTION, TicketStatus.IN_PROGRESS,
+						null, TICKET_CREATED_BY, TICKET_ASSIGNED_TO));
+
+		when(ticketService.getAllTickets(TICKET_CREATED_BY)).thenReturn(tickets);
+
+		mockMvc.perform(get(BASE_URI).with(user(TICKET_CREATED_BY)))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$").isArray())
+				.andExpect(jsonPath("$.length()").value(tickets.size()))
+				.andExpect(jsonPath("$[0].id").exists())
+				.andExpect(jsonPath("$[0].title").exists())
+				.andExpect(jsonPath("$[0].description").exists())
+				.andExpect(jsonPath("$[0].status").exists())
+				.andExpect(jsonPath("$[0].solution").isEmpty());
+
+		verify(ticketService).getAllTickets(TICKET_CREATED_BY);
+	}
+
+	@Test
+	@DisplayName("getTicketByIdAndCreatedBy: should return HTTP 200 OK for authenticated AGENT or USER")
 	void shouldReturnHttp200AndTicketIfIdExists() throws Exception {
 
-		Ticket ticket = new Ticket(TICKET_ID, TICKET_TITLE, TICKET_DESCRIPTION, TicketStatus.IN_PROGRESS, null);
+		Ticket ticket = new Ticket(TICKET_ID, TICKET_TITLE, TICKET_DESCRIPTION, TicketStatus.IN_PROGRESS,
+				null, TICKET_CREATED_BY, TICKET_ASSIGNED_TO);
 
-		when(ticketService.getTicketById(TICKET_ID)).thenReturn(ticket);
+		when(ticketService.getTicketByIdAndCreatedBy(TICKET_ID, TICKET_CREATED_BY)).thenReturn(ticket);
 
-		mockMvc.perform(get(String.format(BASE_URI + "/%s", TICKET_ID)))
+		mockMvc.perform(get(String.format(BASE_URI + "/%s", TICKET_ID)).with(user(TICKET_CREATED_BY)))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.id").value(TICKET_ID.toString()));
 
-		verify(ticketService).getTicketById(TICKET_ID);
+		verify(ticketService).getTicketByIdAndCreatedBy(TICKET_ID, TICKET_CREATED_BY);
 	}
 
 	@Test
@@ -178,7 +217,7 @@ public class TicketControllerTest {
 	void shouldReturnHttp200WithSolvedAndClosedTicket() throws Exception {
 
 		Ticket savedTicket = new Ticket(TICKET_ID, TICKET_TITLE, TICKET_DESCRIPTION, TicketStatus.CLOSED,
-				TICKET_SOLUTION);
+				TICKET_SOLUTION, TICKET_CREATED_BY, TICKET_ASSIGNED_TO);
 		SolutionRequestDto solutionRequest = new SolutionRequestDto("  " + TICKET_SOLUTION + "  ");
 
 		when(ticketService.solveTicket(TICKET_ID, solutionRequest)).thenReturn(savedTicket);
@@ -200,7 +239,7 @@ public class TicketControllerTest {
 	void shouldReturnHttp200WithTicketInProgressStatus() throws Exception {
 
 		Ticket savedTicket = new Ticket(TICKET_ID, TICKET_TITLE, TICKET_DESCRIPTION, TicketStatus.IN_PROGRESS,
-				null);
+				null, TICKET_CREATED_BY, TICKET_ASSIGNED_TO);
 
 		when(ticketService.setTicketInProgress(TICKET_ID)).thenReturn(savedTicket);
 
@@ -290,19 +329,18 @@ public class TicketControllerTest {
 	}
 
 	@Test
-	@DisplayName("getTicketById: should return HTTP 404 Not Found for authenticated AGENT or USER")
-	@WithMockUser(roles = { "USER", "AGENT" })
+	@DisplayName("getTicketByIdAndCreatedBy: should return HTTP 404 Not Found for authenticated AGENT or USER")
 	void shouldReturnHttp404IfIdNotExists() throws Exception {
 
 		UUID UNKNOWN_TICKET_ID = UUID.randomUUID();
 
-		when(ticketService.getTicketById(UNKNOWN_TICKET_ID)).thenThrow(new TicketNotFoundException("Ticket not found:" + UNKNOWN_TICKET_ID));
+		when(ticketService.getTicketByIdAndCreatedBy(UNKNOWN_TICKET_ID, TICKET_CREATED_BY))
+				.thenThrow(new TicketNotFoundException("Ticket not found:" + UNKNOWN_TICKET_ID));
 
-		this.mockMvc.perform(get("/api/tickets/" + UNKNOWN_TICKET_ID))
+		this.mockMvc.perform(get("/api/tickets/" + UNKNOWN_TICKET_ID).with(user(TICKET_CREATED_BY)))
 				.andExpect(status().isNotFound());
 
-		verify(ticketService).getTicketById(UNKNOWN_TICKET_ID);
-
+		verify(ticketService).getTicketByIdAndCreatedBy(UNKNOWN_TICKET_ID, TICKET_CREATED_BY);
 	}
 
 	/**
@@ -311,7 +349,6 @@ public class TicketControllerTest {
 	 *
 	 * @param title       blank title value (null, empty, whitespace)
 	 * @param description blank description value (null, empty, whitespace)
-	 * @
 	 */
 	@ParameterizedTest(name = "[{index}] title=''{0}'' description=''{1}'' should return HTTP 400 Bad Request")
 	@MethodSource("blankInputs")
@@ -343,9 +380,8 @@ public class TicketControllerTest {
 	}
 
 	/**
-	 * 
 	 * Method containing in Stream all blank cases.
-	 * 
+	 *
 	 * @return Stream of null, "", "valide", " ".
 	 */
 	static Stream<Arguments> blankInputs() {
@@ -366,6 +402,5 @@ public class TicketControllerTest {
 				Arguments.of("Titre valide", null),
 				Arguments.of("Titre valide", ""),
 				Arguments.of("Titre valide", " "));
-
 	}
 }

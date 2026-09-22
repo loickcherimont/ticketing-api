@@ -6,12 +6,16 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import com.github.loickcherimont.ticketing_api.models.Role;
+import com.github.loickcherimont.ticketing_api.models.User;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -32,26 +36,12 @@ import com.github.loickcherimont.ticketing_api.services.impl.TicketServiceImpl;
  * All dependencies (repository) are mocked with Mockito:
  * no database is accessed during test execution.
  * </p>
- *
- * <p>
- * Covered scenarios:
- * </p>
- * <ul>
- * <li>Retrieving an existing ticket by identifier</li>
- * <li>Creating a new ticket</li>
- * <li>Resolving a ticket (CLOSED status)</li>
- * <li>Setting a ticket to IN_PROGRESS status</li>
- * <li>Throwing {@link TicketNotFoundException} for an unknown id</li>
- * <li>Throwing {@link TicketExistingTitleException} for an already existing
- * title</li>
- * </ul>
  */
 @ExtendWith(MockitoExtension.class)
 class TicketServiceTest {
 
     // -------------------------------------------------------------------------
     // Shared test data
-    // Centralized here: if a value changes, it only needs to be updated once.
     // -------------------------------------------------------------------------
 
     private static final UUID TICKET_ID = UUID.randomUUID();
@@ -62,6 +52,13 @@ class TicketServiceTest {
             + "Un délai supplémentaire de 24 à 48 heures est nécessaire en raison "
             + "d'un contrôle de conformité. Le client sera notifié dès que les fonds "
             + "seront crédités sur son compte courant.";
+    private static final User AGENT_USER = new User(
+            UUID.randomUUID(), "agent@company.com", "password", Role.AGENT);
+    private static final User ROLE_USER = new User(
+            UUID.randomUUID(), "user@company.com", "password", Role.USER);
+    private static final User TICKET_CREATED_BY = ROLE_USER;
+    private static final User TICKET_ASSIGNED_TO = new User(
+            UUID.randomUUID(), "other.agent@company.com", "password", Role.AGENT);
 
     // -------------------------------------------------------------------------
     // Mocks and class under test
@@ -74,18 +71,53 @@ class TicketServiceTest {
     private TicketServiceImpl ticketService;
 
     // -------------------------------------------------------------------------
-    // Tests — happy paths
+    // Tests — getAllTickets scoping
     // -------------------------------------------------------------------------
 
     @Test
-    @DisplayName("getTicketById: should return ticket when identifier exists")
-    void shouldReturnTicketIfIdExists() {
+    @DisplayName("getAllTickets: should return all tickets for AGENT")
+    void shouldReturnAllTicketsForAgent() {
 
-        Ticket ticket = new Ticket(TICKET_ID, TICKET_TITLE, TICKET_DESC, TicketStatus.IN_PROGRESS, null);
+        List<Ticket> tickets = List.of(
+                new Ticket(TICKET_ID, TICKET_TITLE, TICKET_DESC, TicketStatus.OPEN, null, TICKET_CREATED_BY, null));
+
+        when(ticketRepository.findAll()).thenReturn(tickets);
+
+        List<Ticket> result = ticketService.getAllTickets(AGENT_USER);
+
+        assertThat(result).containsExactlyElementsOf(tickets);
+        verify(ticketRepository).findAll();
+    }
+
+    @Test
+    @DisplayName("getAllTickets: should return only the current USER tickets")
+    void shouldReturnOnlyTicketsCreatedByCurrentUser() {
+
+        List<Ticket> tickets = List.of(
+                new Ticket(TICKET_ID, TICKET_TITLE, TICKET_DESC, TicketStatus.OPEN, null, ROLE_USER, null));
+
+        when(ticketRepository.findAllByCreatedBy(ROLE_USER)).thenReturn(tickets);
+
+        List<Ticket> result = ticketService.getAllTickets(ROLE_USER);
+
+        assertThat(result).containsExactlyElementsOf(tickets);
+        verify(ticketRepository).findAllByCreatedBy(ROLE_USER);
+    }
+
+    // -------------------------------------------------------------------------
+    // Tests — getTicketByIdAndCreatedBy
+    // -------------------------------------------------------------------------
+
+    @Test
+    @DisplayName("getTicketByIdAndCreatedBy: should return ticket for AGENT when identifier exists")
+    void shouldReturnTicketIfIdExistsForAgent() {
+
+        Ticket ticket = new Ticket(TICKET_ID, TICKET_TITLE, TICKET_DESC, TicketStatus.IN_PROGRESS,
+                null, TICKET_CREATED_BY, TICKET_ASSIGNED_TO);
 
         when(ticketRepository.findById(TICKET_ID)).thenReturn(Optional.of(ticket));
 
-        Ticket result = ticketService.getTicketById(TICKET_ID);
+        Ticket result = ticketService.getTicketByIdAndCreatedBy(TICKET_ID, AGENT_USER);
 
         assertThat(result).isNotNull();
         assertThat(result.getId()).isEqualTo(TICKET_ID);
@@ -93,30 +125,91 @@ class TicketServiceTest {
     }
 
     @Test
-    @DisplayName("createTicket: should return created ticket with OPEN status and no solution")
+    @DisplayName("getTicketByIdAndCreatedBy: should return ticket for USER when he is the owner")
+    void shouldReturnTicketIfCurrentUserIsOwner() {
+
+        Ticket ticket = new Ticket(TICKET_ID, TICKET_TITLE, TICKET_DESC, TicketStatus.IN_PROGRESS,
+                null, ROLE_USER, TICKET_ASSIGNED_TO);
+
+        when(ticketRepository.findByIdAndCreatedBy(TICKET_ID, ROLE_USER)).thenReturn(Optional.of(ticket));
+
+        Ticket result = ticketService.getTicketByIdAndCreatedBy(TICKET_ID, ROLE_USER);
+
+        assertThat(result).isNotNull();
+        assertThat(result.getId()).isEqualTo(TICKET_ID);
+        verify(ticketRepository).findByIdAndCreatedBy(TICKET_ID, ROLE_USER);
+    }
+
+    @Test
+    @DisplayName("getTicketByIdAndCreatedBy: should throw TicketNotFoundException for USER not owning the ticket")
+    void shouldThrowTicketNotFoundExceptionWhenCurrentUserDoesNotOwnTicket() {
+
+        UUID NOT_OWNED_TICKET_ID = UUID.randomUUID();
+        String notFoundMessage = String.format("Ticket %s introuvable", NOT_OWNED_TICKET_ID);
+
+        when(ticketRepository.findByIdAndCreatedBy(NOT_OWNED_TICKET_ID, ROLE_USER)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> ticketService.getTicketByIdAndCreatedBy(NOT_OWNED_TICKET_ID, ROLE_USER))
+                .isInstanceOf(TicketNotFoundException.class)
+                .hasMessage(notFoundMessage);
+
+        verify(ticketRepository).findByIdAndCreatedBy(NOT_OWNED_TICKET_ID, ROLE_USER);
+    }
+
+    // -------------------------------------------------------------------------
+    // Tests — createTicket
+    // -------------------------------------------------------------------------
+
+    @Test
+    @DisplayName("createTicket: should return created ticket with OPEN status, no solution and current user as creator")
     void shouldReturnNewCreatedTicket() {
 
         TicketRequestDto request = new TicketRequestDto(TICKET_TITLE, TICKET_DESC);
 
-        Ticket savedTicket = new Ticket(TICKET_ID, TICKET_TITLE, TICKET_DESC, TicketStatus.OPEN, null);
+        Ticket savedTicket = new Ticket(TICKET_ID, TICKET_TITLE, TICKET_DESC, TicketStatus.OPEN,
+                null, ROLE_USER, null);
 
         when(ticketRepository.save(any(Ticket.class))).thenReturn(savedTicket);
 
-        Ticket result = ticketService.createTicket(request);
+        Ticket result = ticketService.createTicket(request, ROLE_USER);
 
         assertThat(result.getId()).isEqualTo(TICKET_ID);
         assertThat(result.getTitle()).isEqualTo(TICKET_TITLE);
         assertThat(result.getDescription()).isEqualTo(TICKET_DESC);
         assertThat(result.getStatus()).isEqualTo(TicketStatus.OPEN);
         assertThat(result.getSolution()).isNull();
-        verify(ticketRepository).save(any(Ticket.class));
+        assertThat(result.getCreatedBy()).isEqualTo(ROLE_USER);
+
+        ArgumentCaptor<Ticket> ticketCaptor = ArgumentCaptor.forClass(Ticket.class);
+        verify(ticketRepository).save(ticketCaptor.capture());
+        assertThat(ticketCaptor.getValue().getCreatedBy()).isEqualTo(ROLE_USER);
     }
+
+    @Test
+    @DisplayName("createTicket: should throw TicketExistingTitleException when title is already used")
+    void shouldThrowTicketExistingTitleExceptionForDuplicateTitle() {
+
+        TicketRequestDto request = new TicketRequestDto(TICKET_TITLE, TICKET_DESC);
+
+        when(ticketRepository.existsByTitle(request.title().trim())).thenReturn(true);
+
+        assertThatThrownBy(() -> ticketService.createTicket(request, ROLE_USER))
+                .isInstanceOf(TicketExistingTitleException.class)
+                .hasMessage("Ce titre existe déjà, veuillez en choisir un autre.");
+
+        verify(ticketRepository).existsByTitle(request.title().trim());
+    }
+
+    // -------------------------------------------------------------------------
+    // Tests — solveTicket
+    // -------------------------------------------------------------------------
 
     @Test
     @DisplayName("solveTicket: should return ticket with CLOSED status and trimmed solution")
     void shouldReturnSolvedTicketWithClosedStatus() {
 
-        Ticket savedTicket = new Ticket(TICKET_ID, TICKET_TITLE, TICKET_DESC, TicketStatus.CLOSED, TICKET_SOLUTION);
+        Ticket savedTicket = new Ticket(TICKET_ID, TICKET_TITLE, TICKET_DESC, TicketStatus.CLOSED,
+                TICKET_SOLUTION, TICKET_CREATED_BY, TICKET_ASSIGNED_TO);
 
         when(ticketRepository.findById(TICKET_ID)).thenReturn(Optional.of(savedTicket));
         when(ticketRepository.save(any(Ticket.class))).thenReturn(savedTicket);
@@ -134,12 +227,16 @@ class TicketServiceTest {
         verify(ticketRepository).save(any(Ticket.class));
     }
 
+    // -------------------------------------------------------------------------
+    // Tests — setTicketInProgress
+    // -------------------------------------------------------------------------
+
     @Test
     @DisplayName("setTicketInProgress: should return ticket with IN_PROGRESS status and no solution")
     void shouldReturnTicketWithInProgressStatus() {
 
         Ticket savedTicket = new Ticket(TICKET_ID, TICKET_TITLE, TICKET_DESC, TicketStatus.IN_PROGRESS,
-                null);
+                null, TICKET_CREATED_BY, TICKET_ASSIGNED_TO);
 
         when(ticketRepository.findById(TICKET_ID)).thenReturn(Optional.of(savedTicket));
         when(ticketRepository.save(any(Ticket.class))).thenReturn(savedTicket);
@@ -157,17 +254,8 @@ class TicketServiceTest {
     // Tests — error scenarios (edge cases)
     // -------------------------------------------------------------------------
 
-    /**
-     * Verifies that {@link TicketNotFoundException} is thrown when the requested
-     * identifier does not exist in the database.
-     *
-     * <p>
-     * The error message must contain the provided identifier so that
-     * callers (controllers, logs) can quickly identify the missing ticket.
-     * </p>
-     */
     @Test
-    @DisplayName("getTicketById: should throw TicketNotFoundException when identifier is unknown")
+    @DisplayName("getTicketByIdAndCreatedBy: should throw TicketNotFoundException when identifier is unknown")
     void shouldThrowTicketNotFoundExceptionWhenIdDoesNotExist() {
 
         UUID UNKNOWN_TICKET_ID = UUID.randomUUID();
@@ -175,34 +263,10 @@ class TicketServiceTest {
 
         when(ticketRepository.findById(UNKNOWN_TICKET_ID)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> ticketService.getTicketById(UNKNOWN_TICKET_ID))
+        assertThatThrownBy(() -> ticketService.getTicketByIdAndCreatedBy(UNKNOWN_TICKET_ID, AGENT_USER))
                 .isInstanceOf(TicketNotFoundException.class)
                 .hasMessage(notFoundMessage);
 
         verify(ticketRepository).findById(UNKNOWN_TICKET_ID);
-    }
-
-    /**
-     * Verifies that {@link TicketExistingTitleException} is thrown when a ticket
-     * with the same title already exists.
-     *
-     * <p>
-     * The title is trimmed in the service layer. This test ensures that
-     * the repository validation is performed using the sanitized value.
-     * </p>
-     */
-    @Test
-    @DisplayName("createTicket: should throw TicketExistingTitleException when title is already used")
-    void shouldThrowTicketExistingTitleExceptionForDuplicateTitle() {
-
-        TicketRequestDto request = new TicketRequestDto(TICKET_TITLE, TICKET_DESC);
-
-        when(ticketRepository.existsByTitle(request.title().trim())).thenReturn(true);
-
-        assertThatThrownBy(() -> ticketService.createTicket(request))
-                .isInstanceOf(TicketExistingTitleException.class)
-                .hasMessage("Ce titre existe déjà, veuillez en choisir un autre.");
-
-        verify(ticketRepository).existsByTitle(request.title().trim());
     }
 }

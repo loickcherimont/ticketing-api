@@ -4,8 +4,10 @@ import java.net.URI;
 import java.util.List;
 import java.util.UUID;
 
+import com.github.loickcherimont.ticketing_api.models.User;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import com.github.loickcherimont.ticketing_api.services.TicketService;
@@ -63,8 +65,9 @@ public class TicketController {
     @ApiResponse(responseCode = "401", description = "Unauthorized - JWT token missing or invalid")
     @ApiResponse(responseCode = "409", description = "Ticket with same title already exists")
     @PostMapping
-    public ResponseEntity<Ticket> createTicket(@Valid @RequestBody TicketRequestDto ticketRequestDto) {
-        Ticket created = ticketService.createTicket(ticketRequestDto);
+    public ResponseEntity<Ticket> createTicket(@Valid @RequestBody TicketRequestDto ticketRequestDto,
+                                               @AuthenticationPrincipal User currentUser) {
+        Ticket created = ticketService.createTicket(ticketRequestDto, currentUser);
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .location(URI.create("/api/tickets/" + created.getId()))
@@ -75,8 +78,8 @@ public class TicketController {
     @ApiResponse(responseCode = "200", description = "Tickets retrieved")
     @ApiResponse(responseCode = "401", description = "Unauthorized - JWT token missing or invalid")
     @GetMapping
-    public ResponseEntity<List<Ticket>> getAllTickets() {
-        return ResponseEntity.status(HttpStatus.OK).body(ticketService.getAllTickets());
+    public ResponseEntity<List<Ticket>> getAllTickets(@AuthenticationPrincipal User currentUser) {
+        return ResponseEntity.status(HttpStatus.OK).body(ticketService.getAllTickets(currentUser));
     }
 
     /**
@@ -90,8 +93,9 @@ public class TicketController {
     @ApiResponse(responseCode = "401", description = "Unauthorized - JWT token missing or invalid")
     @ApiResponse(responseCode = "404", description = "Ticket with specified `id` not found")
     @GetMapping("/{id}")
-    public ResponseEntity<Ticket> getTicketById(@Parameter(description = "`id` of ticket") @PathVariable UUID id) {
-        return ResponseEntity.status(HttpStatus.OK).body(ticketService.getTicketById(id));
+    public ResponseEntity<Ticket> getTicketById(@Parameter(description = "`id` of ticket") @PathVariable UUID id,
+                                                @AuthenticationPrincipal  User currentUser) {
+        return ResponseEntity.status(HttpStatus.OK).body(ticketService.getTicketByIdAndCreatedBy(id, currentUser));
     }
 
     /**
