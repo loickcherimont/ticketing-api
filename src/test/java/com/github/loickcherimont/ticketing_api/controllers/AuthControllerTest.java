@@ -39,7 +39,6 @@ import com.github.loickcherimont.ticketing_api.services.JwtService;
  */
 @WebMvcTest(AuthController.class)
 @AutoConfigureMockMvc(addFilters = false) // don't execute Filter beans from context during test (remove security)
-@ActiveProfiles("test")
 public class AuthControllerTest {
 
         private static final String BASE_URI_PATH = "/api/auth/signin";
