@@ -4,6 +4,7 @@ import java.net.URI;
 import java.util.List;
 import java.util.UUID;
 
+import com.github.loickcherimont.ticketing_api.dto.TicketResponseDto;
 import com.github.loickcherimont.ticketing_api.models.User;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,7 +22,6 @@ import lombok.RequiredArgsConstructor;
 
 import com.github.loickcherimont.ticketing_api.dto.SolutionRequestDto;
 import com.github.loickcherimont.ticketing_api.dto.TicketRequestDto;
-import com.github.loickcherimont.ticketing_api.models.Ticket;
 
 /**
  * REST controller for helpdesk ticket management endpoints.
@@ -34,7 +34,7 @@ import com.github.loickcherimont.ticketing_api.models.Ticket;
  * </p>
  *
  * @see com.github.loickcherimont.ticketing_api.services.TicketService
- * @see com.github.loickcherimont.ticketing_api.models.Ticket
+ * @see com.github.loickcherimont.ticketing_api.dto.TicketResponseDto
  * @see com.github.loickcherimont.ticketing_api.filter.JwtAuthenticationFilter
  */
 @Tag(name = "Tickets", description = "Helpdesk management API for tickets")
@@ -65,12 +65,12 @@ public class TicketController {
     @ApiResponse(responseCode = "401", description = "Unauthorized - JWT token missing or invalid")
     @ApiResponse(responseCode = "409", description = "Ticket with same title already exists")
     @PostMapping
-    public ResponseEntity<Ticket> createTicket(@Valid @RequestBody TicketRequestDto ticketRequestDto,
+    public ResponseEntity<TicketResponseDto> createTicket(@Valid @RequestBody TicketRequestDto ticketRequestDto,
                                                @AuthenticationPrincipal User currentUser) {
-        Ticket created = ticketService.createTicket(ticketRequestDto, currentUser);
+        TicketResponseDto created = ticketService.createTicket(ticketRequestDto, currentUser);
         return ResponseEntity
                 .status(HttpStatus.CREATED)
-                .location(URI.create("/api/tickets/" + created.getId()))
+                .location(URI.create("/api/tickets/" + created.id()))
                 .body(created);
     }
 
@@ -78,7 +78,7 @@ public class TicketController {
     @ApiResponse(responseCode = "200", description = "Tickets retrieved")
     @ApiResponse(responseCode = "401", description = "Unauthorized - JWT token missing or invalid")
     @GetMapping
-    public ResponseEntity<List<Ticket>> getAllTickets(@AuthenticationPrincipal User currentUser) {
+    public ResponseEntity<List<TicketResponseDto>> getAllTickets(@AuthenticationPrincipal User currentUser) {
         return ResponseEntity.status(HttpStatus.OK).body(ticketService.getAllTickets(currentUser));
     }
 
@@ -93,7 +93,7 @@ public class TicketController {
     @ApiResponse(responseCode = "401", description = "Unauthorized - JWT token missing or invalid")
     @ApiResponse(responseCode = "404", description = "Ticket with specified `id` not found")
     @GetMapping("/{id}")
-    public ResponseEntity<Ticket> getTicketById(@Parameter(description = "`id` of ticket") @PathVariable UUID id,
+    public ResponseEntity<TicketResponseDto> getTicketById(@Parameter(description = "`id` of ticket") @PathVariable UUID id,
                                                 @AuthenticationPrincipal  User currentUser) {
         return ResponseEntity.status(HttpStatus.OK).body(ticketService.getTicketByIdAndCreatedBy(id, currentUser));
     }
@@ -112,7 +112,7 @@ public class TicketController {
     @ApiResponse(responseCode = "403", description = "Forbidden - insufficient role (AGENT role required)")
     @ApiResponse(responseCode = "404", description = "Ticket with specified `id` not found")
     @PatchMapping("/{id}/solve")
-    public ResponseEntity<Ticket> solveTicket(@PathVariable UUID id,
+    public ResponseEntity<TicketResponseDto> solveTicket(@PathVariable UUID id,
             @Valid @RequestBody SolutionRequestDto solutionRequestDto) {
         return ResponseEntity.status(HttpStatus.OK).body(ticketService.solveTicket(id, solutionRequestDto));
     }
@@ -129,7 +129,7 @@ public class TicketController {
     @ApiResponse(responseCode = "403", description = "Forbidden - insufficient role (AGENT role required)")
     @ApiResponse(responseCode = "404", description = "Ticket with specified `id` not found")
     @PatchMapping("/{id}/in-progress")
-    public ResponseEntity<Ticket> setTicketInProgress(@PathVariable UUID id) {
+    public ResponseEntity<TicketResponseDto> setTicketInProgress(@PathVariable UUID id) {
         return ResponseEntity.status(HttpStatus.OK).body(ticketService.setTicketInProgress(id));
     }
 }

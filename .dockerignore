@@ -4,3 +4,15 @@
 target/
 .sonar/
 .sonarlint/
+
+# Secrets and local environment (never baked into the image)
+.env*
+
+# Git and documentation metadata not needed in the image
+.git/
+.github/
+README.md
+LICENSE
+.gitattributes
+docker-compose.yml
+mvnw.cmd

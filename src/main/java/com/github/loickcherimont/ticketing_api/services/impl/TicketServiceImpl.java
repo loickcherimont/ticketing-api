@@ -2,9 +2,9 @@ package com.github.loickcherimont.ticketing_api.services.impl;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.UUID;
 
+import com.github.loickcherimont.ticketing_api.dto.TicketResponseDto;
 import com.github.loickcherimont.ticketing_api.models.Role;
 import com.github.loickcherimont.ticketing_api.models.User;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -27,12 +27,12 @@ public class TicketServiceImpl implements TicketService {
     private final TicketRepository ticketRepository;
 
     @Override
-    public List<Ticket> getAllTickets(User currentUser) {
+    public List<TicketResponseDto> getAllTickets(User currentUser) {
 
         if (Objects.requireNonNull(currentUser.getRole()) == Role.AGENT) {
-            return ticketRepository.findAll();
+            return ticketRepository.findAll().stream().map(TicketResponseDto::from).toList();
         }
-        return ticketRepository.findAllByCreatedBy(currentUser);
+        return ticketRepository.findAllByCreatedBy(currentUser).stream().map(TicketResponseDto::from).toList();
     }
 
     /**
@@ -40,17 +40,20 @@ public class TicketServiceImpl implements TicketService {
      * Retrieve user ticket using ticket id and the current user.
      *
      * @param id   Ticket identifier
-     * @param user Ticket owner
-     * @return the ticket if found
+     * @param currentUser Ticket owner
+     * @return the ticket, mapped to a {@code TicketResponseDto}, if the current
+     *         user owns it
      * @throws TicketNotFoundException if no ticket exists with the given id
      */
     @Override
-    public Ticket getTicketByIdAndCreatedBy(UUID id, User currentUser) {
+    public TicketResponseDto getTicketByIdAndCreatedBy(UUID id, User currentUser) {
 
         if (Objects.requireNonNull(currentUser.getRole()) == Role.AGENT) {
-            return findTicketById(id);
+            return TicketResponseDto.from(findTicketById(id));
         }
-        return ticketRepository.findByIdAndCreatedBy(id, currentUser).orElseThrow(() -> new TicketNotFoundException("Ticket " + id + " introuvable"));
+        return ticketRepository.findByIdAndCreatedBy(id, currentUser)
+                .map(TicketResponseDto::from)
+                .orElseThrow(() -> new TicketNotFoundException("Ticket " + id + " introuvable"));
 
     }
 
@@ -59,10 +62,10 @@ public class TicketServiceImpl implements TicketService {
      *
      * @param ticketRequestDto Ticket informations from client
      * @param currentUser
-     * @return The new created ticket
+     * @return the new created ticket as a {@code TicketResponseDto}
      */
     @Override
-    public Ticket createTicket(TicketRequestDto ticketRequestDto, User currentUser) {
+    public TicketResponseDto createTicket(TicketRequestDto ticketRequestDto, User currentUser) {
 
         if (ticketRepository.existsByTitle(ticketRequestDto.title().trim())) {
             throw new TicketExistingTitleException("Ce titre existe déjà, veuillez en choisir un autre.");
@@ -75,7 +78,7 @@ public class TicketServiceImpl implements TicketService {
         newTicket.setStatus(TicketStatus.OPEN);
         newTicket.setCreatedBy(currentUser);
 
-        return ticketRepository.save(newTicket);
+        return TicketResponseDto.from(ticketRepository.save(newTicket));
     }
 
     /**
@@ -89,32 +92,33 @@ public class TicketServiceImpl implements TicketService {
      * @param solutionRequestDto Object containing the attached solution to the
      *                           ticket
      *
-     * @return The updated ticket with the provided solution and {@code CLOSED}
-     *         status
+     * @return the updated ticket as a {@code TicketResponseDto}, with the provided
+     *         solution and {@code CLOSED} status
      */
     @Override
     @PreAuthorize("hasRole('AGENT')")
-    public Ticket solveTicket(UUID id, SolutionRequestDto solutionRequestDto) {
+    public TicketResponseDto solveTicket(UUID id, SolutionRequestDto solutionRequestDto) {
         Ticket existingTicket = findTicketById(id);
         existingTicket.setSolution(solutionRequestDto.solution().trim());
         existingTicket.setStatus(TicketStatus.CLOSED);
-        return ticketRepository.save(existingTicket);
+        return TicketResponseDto.from(ticketRepository.save(existingTicket));
     }
 
     /**
-     * Change ticket status and solution to {@code IN_PROGRESS} and saving the
-     * update in database.
+     * Change ticket status to {@code IN_PROGRESS} and save the update in the
+     * database.
      *
      * @param id Ticket identifier
      *
-     * @return The updated ticket with {@code IN_PROGRESS} status
+     * @return the updated ticket as a {@code TicketResponseDto} with
+     *         {@code IN_PROGRESS} status
      */
     @Override
     @PreAuthorize("hasRole('AGENT')")
-    public Ticket setTicketInProgress(UUID id) {
+    public TicketResponseDto setTicketInProgress(UUID id) {
         Ticket existingTicket = findTicketById(id);
         existingTicket.setStatus(TicketStatus.IN_PROGRESS);
-        return ticketRepository.save(existingTicket);
+        return TicketResponseDto.from(ticketRepository.save(existingTicket));
     }
 
     /**
