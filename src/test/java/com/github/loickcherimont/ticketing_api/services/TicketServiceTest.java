@@ -22,6 +22,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.github.loickcherimont.ticketing_api.dto.SolutionRequestDto;
 import com.github.loickcherimont.ticketing_api.dto.TicketRequestDto;
+import com.github.loickcherimont.ticketing_api.dto.TicketResponseDto;
 import com.github.loickcherimont.ticketing_api.exceptions.TicketExistingTitleException;
 import com.github.loickcherimont.ticketing_api.exceptions.TicketNotFoundException;
 import com.github.loickcherimont.ticketing_api.models.Ticket;
@@ -78,14 +79,17 @@ class TicketServiceTest {
     @DisplayName("getAllTickets: should return all tickets for AGENT")
     void shouldReturnAllTicketsForAgent() {
 
-        List<Ticket> tickets = List.of(
-                new Ticket(TICKET_ID, TICKET_TITLE, TICKET_DESC, TicketStatus.OPEN, null, TICKET_CREATED_BY, null));
+        Ticket ticket = new Ticket(TICKET_ID, TICKET_TITLE, TICKET_DESC, TicketStatus.OPEN,
+                null, TICKET_CREATED_BY, TICKET_ASSIGNED_TO);
+        List<Ticket> tickets = List.of(ticket);
 
         when(ticketRepository.findAll()).thenReturn(tickets);
 
-        List<Ticket> result = ticketService.getAllTickets(AGENT_USER);
+        List<TicketResponseDto> result = ticketService.getAllTickets(AGENT_USER);
 
-        assertThat(result).containsExactlyElementsOf(tickets);
+        assertThat(result).containsExactly(TicketResponseDto.from(ticket));
+        assertThat(result.get(0).createdByEmail()).isEqualTo(TICKET_CREATED_BY.getEmail());
+        assertThat(result.get(0).assignedToEmail()).isEqualTo(TICKET_ASSIGNED_TO.getEmail());
         verify(ticketRepository).findAll();
     }
 
@@ -93,14 +97,17 @@ class TicketServiceTest {
     @DisplayName("getAllTickets: should return only the current USER tickets")
     void shouldReturnOnlyTicketsCreatedByCurrentUser() {
 
-        List<Ticket> tickets = List.of(
-                new Ticket(TICKET_ID, TICKET_TITLE, TICKET_DESC, TicketStatus.OPEN, null, ROLE_USER, null));
+        Ticket ticket = new Ticket(TICKET_ID, TICKET_TITLE, TICKET_DESC, TicketStatus.OPEN,
+                null, ROLE_USER, null);
+        List<Ticket> tickets = List.of(ticket);
 
         when(ticketRepository.findAllByCreatedBy(ROLE_USER)).thenReturn(tickets);
 
-        List<Ticket> result = ticketService.getAllTickets(ROLE_USER);
+        List<TicketResponseDto> result = ticketService.getAllTickets(ROLE_USER);
 
-        assertThat(result).containsExactlyElementsOf(tickets);
+        assertThat(result).containsExactly(TicketResponseDto.from(ticket));
+        assertThat(result.get(0).createdByEmail()).isEqualTo(ROLE_USER.getEmail());
+        assertThat(result.get(0).assignedToEmail()).isNull();
         verify(ticketRepository).findAllByCreatedBy(ROLE_USER);
     }
 
@@ -117,10 +124,12 @@ class TicketServiceTest {
 
         when(ticketRepository.findById(TICKET_ID)).thenReturn(Optional.of(ticket));
 
-        Ticket result = ticketService.getTicketByIdAndCreatedBy(TICKET_ID, AGENT_USER);
+        TicketResponseDto result = ticketService.getTicketByIdAndCreatedBy(TICKET_ID, AGENT_USER);
 
         assertThat(result).isNotNull();
-        assertThat(result.getId()).isEqualTo(TICKET_ID);
+        assertThat(result.id()).isEqualTo(TICKET_ID);
+        assertThat(result.createdByEmail()).isEqualTo(TICKET_CREATED_BY.getEmail());
+        assertThat(result.assignedToEmail()).isEqualTo(TICKET_ASSIGNED_TO.getEmail());
         verify(ticketRepository).findById(TICKET_ID);
     }
 
@@ -133,10 +142,12 @@ class TicketServiceTest {
 
         when(ticketRepository.findByIdAndCreatedBy(TICKET_ID, ROLE_USER)).thenReturn(Optional.of(ticket));
 
-        Ticket result = ticketService.getTicketByIdAndCreatedBy(TICKET_ID, ROLE_USER);
+        TicketResponseDto result = ticketService.getTicketByIdAndCreatedBy(TICKET_ID, ROLE_USER);
 
         assertThat(result).isNotNull();
-        assertThat(result.getId()).isEqualTo(TICKET_ID);
+        assertThat(result.id()).isEqualTo(TICKET_ID);
+        assertThat(result.createdByEmail()).isEqualTo(ROLE_USER.getEmail());
+        assertThat(result.assignedToEmail()).isEqualTo(TICKET_ASSIGNED_TO.getEmail());
         verify(ticketRepository).findByIdAndCreatedBy(TICKET_ID, ROLE_USER);
     }
 
@@ -171,14 +182,15 @@ class TicketServiceTest {
 
         when(ticketRepository.save(any(Ticket.class))).thenReturn(savedTicket);
 
-        Ticket result = ticketService.createTicket(request, ROLE_USER);
+        TicketResponseDto result = ticketService.createTicket(request, ROLE_USER);
 
-        assertThat(result.getId()).isEqualTo(TICKET_ID);
-        assertThat(result.getTitle()).isEqualTo(TICKET_TITLE);
-        assertThat(result.getDescription()).isEqualTo(TICKET_DESC);
-        assertThat(result.getStatus()).isEqualTo(TicketStatus.OPEN);
-        assertThat(result.getSolution()).isNull();
-        assertThat(result.getCreatedBy()).isEqualTo(ROLE_USER);
+        assertThat(result.id()).isEqualTo(TICKET_ID);
+        assertThat(result.title()).isEqualTo(TICKET_TITLE);
+        assertThat(result.description()).isEqualTo(TICKET_DESC);
+        assertThat(result.status()).isEqualTo(TicketStatus.OPEN);
+        assertThat(result.solution()).isNull();
+        assertThat(result.createdByEmail()).isEqualTo(ROLE_USER.getEmail());
+        assertThat(result.assignedToEmail()).isNull();
 
         ArgumentCaptor<Ticket> ticketCaptor = ArgumentCaptor.forClass(Ticket.class);
         verify(ticketRepository).save(ticketCaptor.capture());
@@ -218,11 +230,11 @@ class TicketServiceTest {
         // to verify that the service trims it before persisting.
         SolutionRequestDto solutionWithPadding = new SolutionRequestDto("  " + TICKET_SOLUTION + "        ");
 
-        Ticket result = ticketService.solveTicket(TICKET_ID, solutionWithPadding);
+        TicketResponseDto result = ticketService.solveTicket(TICKET_ID, solutionWithPadding);
 
-        assertThat(result.getId()).isEqualTo(TICKET_ID);
-        assertThat(result.getStatus()).isEqualTo(TicketStatus.CLOSED);
-        assertThat(result.getSolution()).isEqualTo(TICKET_SOLUTION);
+        assertThat(result.id()).isEqualTo(TICKET_ID);
+        assertThat(result.status()).isEqualTo(TicketStatus.CLOSED);
+        assertThat(result.solution()).isEqualTo(TICKET_SOLUTION);
         verify(ticketRepository).findById(TICKET_ID);
         verify(ticketRepository).save(any(Ticket.class));
     }
@@ -241,11 +253,11 @@ class TicketServiceTest {
         when(ticketRepository.findById(TICKET_ID)).thenReturn(Optional.of(savedTicket));
         when(ticketRepository.save(any(Ticket.class))).thenReturn(savedTicket);
 
-        Ticket result = ticketService.setTicketInProgress(TICKET_ID);
+        TicketResponseDto result = ticketService.setTicketInProgress(TICKET_ID);
 
-        assertThat(result.getId()).isEqualTo(TICKET_ID);
-        assertThat(result.getStatus()).isEqualTo(TicketStatus.IN_PROGRESS);
-        assertThat(result.getSolution()).isNull();
+        assertThat(result.id()).isEqualTo(TICKET_ID);
+        assertThat(result.status()).isEqualTo(TicketStatus.IN_PROGRESS);
+        assertThat(result.solution()).isNull();
         verify(ticketRepository).findById(TICKET_ID);
         verify(ticketRepository).save(any(Ticket.class));
     }

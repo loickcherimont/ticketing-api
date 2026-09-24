@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Stream;
 
+import com.github.loickcherimont.ticketing_api.dto.TicketResponseDto;
 import com.github.loickcherimont.ticketing_api.models.User;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.BeforeEach;
@@ -113,10 +114,10 @@ public class TicketControllerTest {
 	void shouldReturnHttp201WithNewCreatedTicket() throws Exception {
 
 		TicketRequestDto request = new TicketRequestDto(TICKET_TITLE, TICKET_DESCRIPTION);
-		Ticket savedTicket = new Ticket(TICKET_ID, TICKET_TITLE, TICKET_DESCRIPTION, TicketStatus.OPEN, null,
-				TICKET_CREATED_BY, null);
+		TicketResponseDto response = new TicketResponseDto(TICKET_ID, TICKET_TITLE, TICKET_DESCRIPTION,
+				TicketStatus.OPEN, null, TICKET_CREATED_BY.getEmail(), null);
 
-		when(ticketService.createTicket(any(TicketRequestDto.class), any(User.class))).thenReturn(savedTicket);
+		when(ticketService.createTicket(any(TicketRequestDto.class), any(User.class))).thenReturn(response);
 
 		mockMvc.perform(post(BASE_URI)
 				.with(user(TICKET_CREATED_BY))
@@ -127,7 +128,9 @@ public class TicketControllerTest {
 				.andExpect(jsonPath("$.title").value(TICKET_TITLE))
 				.andExpect(jsonPath("$.description").value(TICKET_DESCRIPTION))
 				.andExpect(jsonPath("$.status").value(TicketStatus.OPEN.name()))
-				.andExpect(jsonPath("$.solution").isEmpty());
+				.andExpect(jsonPath("$.solution").isEmpty())
+				.andExpect(jsonPath("$.createdByEmail").value(TICKET_CREATED_BY.getEmail()))
+				.andExpect(jsonPath("$.assignedToEmail").doesNotExist());
 
 		verify(ticketService).createTicket(any(TicketRequestDto.class), any(User.class));
 	}
@@ -152,7 +155,9 @@ public class TicketControllerTest {
 								+ "intégralement sous 48 heures. Une nouvelle carte bancaire a été émise et envoyée à "
 								+ "l'adresse du client.", TICKET_CREATED_BY, TICKET_ASSIGNED_TO));
 
-		when(ticketService.getAllTickets(TICKET_ASSIGNED_TO)).thenReturn(tickets);
+		List<TicketResponseDto> responseDtos = tickets.stream().map(TicketResponseDto::from).toList();
+
+		when(ticketService.getAllTickets(TICKET_ASSIGNED_TO)).thenReturn(responseDtos);
 
 		mockMvc.perform(get(BASE_URI).with(user(TICKET_ASSIGNED_TO)))
 				.andExpect(status().isOk())
@@ -162,7 +167,10 @@ public class TicketControllerTest {
 				.andExpect(jsonPath("$[0].title").exists())
 				.andExpect(jsonPath("$[0].description").exists())
 				.andExpect(jsonPath("$[0].status").exists())
-				.andExpect(jsonPath("$[0].solution").isEmpty());
+				.andExpect(jsonPath("$[0].solution").isEmpty())
+				.andExpect(jsonPath("$[0].assignedToEmail").doesNotExist())
+				.andExpect(jsonPath("$[0].createdByEmail").value(TICKET_CREATED_BY.getEmail()))
+				.andExpect(jsonPath("$[1].assignedToEmail").value(TICKET_ASSIGNED_TO.getEmail()));
 
 		verify(ticketService).getAllTickets(TICKET_ASSIGNED_TO);
 	}
@@ -180,7 +188,9 @@ public class TicketControllerTest {
 				new Ticket(TICKET_ID, TICKET_TITLE, TICKET_DESCRIPTION, TicketStatus.IN_PROGRESS,
 						null, TICKET_CREATED_BY, TICKET_ASSIGNED_TO));
 
-		when(ticketService.getAllTickets(TICKET_CREATED_BY)).thenReturn(tickets);
+		List<TicketResponseDto> responseDtos = tickets.stream().map(TicketResponseDto::from).toList();
+
+		when(ticketService.getAllTickets(TICKET_CREATED_BY)).thenReturn(responseDtos);
 
 		mockMvc.perform(get(BASE_URI).with(user(TICKET_CREATED_BY)))
 				.andExpect(status().isOk())
@@ -190,7 +200,8 @@ public class TicketControllerTest {
 				.andExpect(jsonPath("$[0].title").exists())
 				.andExpect(jsonPath("$[0].description").exists())
 				.andExpect(jsonPath("$[0].status").exists())
-				.andExpect(jsonPath("$[0].solution").isEmpty());
+				.andExpect(jsonPath("$[0].solution").isEmpty())
+				.andExpect(jsonPath("$[0].createdByEmail").value(TICKET_CREATED_BY.getEmail()));
 
 		verify(ticketService).getAllTickets(TICKET_CREATED_BY);
 	}
@@ -201,12 +212,15 @@ public class TicketControllerTest {
 
 		Ticket ticket = new Ticket(TICKET_ID, TICKET_TITLE, TICKET_DESCRIPTION, TicketStatus.IN_PROGRESS,
 				null, TICKET_CREATED_BY, TICKET_ASSIGNED_TO);
+		TicketResponseDto responseDto = TicketResponseDto.from(ticket);
 
-		when(ticketService.getTicketByIdAndCreatedBy(TICKET_ID, TICKET_CREATED_BY)).thenReturn(ticket);
+		when(ticketService.getTicketByIdAndCreatedBy(TICKET_ID, TICKET_CREATED_BY)).thenReturn(responseDto);
 
 		mockMvc.perform(get(String.format(BASE_URI + "/%s", TICKET_ID)).with(user(TICKET_CREATED_BY)))
 				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.id").value(TICKET_ID.toString()));
+				.andExpect(jsonPath("$.id").value(TICKET_ID.toString()))
+				.andExpect(jsonPath("$.createdByEmail").value(TICKET_CREATED_BY.getEmail()))
+				.andExpect(jsonPath("$.assignedToEmail").value(TICKET_ASSIGNED_TO.getEmail()));
 
 		verify(ticketService).getTicketByIdAndCreatedBy(TICKET_ID, TICKET_CREATED_BY);
 	}
@@ -220,7 +234,7 @@ public class TicketControllerTest {
 				TICKET_SOLUTION, TICKET_CREATED_BY, TICKET_ASSIGNED_TO);
 		SolutionRequestDto solutionRequest = new SolutionRequestDto("  " + TICKET_SOLUTION + "  ");
 
-		when(ticketService.solveTicket(TICKET_ID, solutionRequest)).thenReturn(savedTicket);
+		when(ticketService.solveTicket(TICKET_ID, solutionRequest)).thenReturn(TicketResponseDto.from(savedTicket));
 
 		mockMvc.perform(patch(String.format(BASE_URI + "/%s/solve", TICKET_ID))
 				.contentType(MediaType.APPLICATION_JSON)
@@ -241,7 +255,7 @@ public class TicketControllerTest {
 		Ticket savedTicket = new Ticket(TICKET_ID, TICKET_TITLE, TICKET_DESCRIPTION, TicketStatus.IN_PROGRESS,
 				null, TICKET_CREATED_BY, TICKET_ASSIGNED_TO);
 
-		when(ticketService.setTicketInProgress(TICKET_ID)).thenReturn(savedTicket);
+		when(ticketService.setTicketInProgress(TICKET_ID)).thenReturn(TicketResponseDto.from(savedTicket));
 
 		mockMvc.perform(patch(String.format(BASE_URI + "/%s/in-progress", TICKET_ID)))
 				.andExpect(status().isOk())

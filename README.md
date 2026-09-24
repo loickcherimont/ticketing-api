@@ -135,11 +135,13 @@ curl -X POST http://localhost:8080/api/tickets \
 **Response (201 Created):**
 ```json
 {
-  "id": 1,
+  "id": "1919d3eb-b889-41c2-8ee4-32b85a830fca",
   "title": "Login page not working",
   "description": "Cannot sign in to account after password reset",
   "status": "OPEN",
-  "solution": null
+  "solution": null,
+  "createdByEmail": "user@example.com",
+  "assignedToEmail": null
 }
 ```
 
