@@ -1,7 +1,13 @@
--- FAKE DATA for PostgreSQL:
--- Insert 3 tickets for the banking application
+-- FAKE DATA reserved for the "dev" profile only (not applied in prod/test):
+-- 1 user and 1 agent for the banking application
+INSERT INTO
+  users(id, email, password, role)
+VALUES
+    ('d4e5f6a7-b8c9-4d0e-1f2a-3b4c5d6e7f80', 'john.doe@gmail.com', '$2a$10$ZCkYIwrSw8t2mi3klTFKeu9y.jjWABOnWPwbZUlkwTVzc1oQtjGou', 'USER'),
+    ('e5f6a7b8-c9d0-4e1f-2a3b-4c5d6e7f8091', 'agent@company.com', '$2a$10$xtGnHBCYKz3KvMRQmt4fmOplvodVpPxSaE4vL9ijLn4RHFwxZWRBu', 'AGENT');
 
-INSERT INTO 
+-- 3 tickets for the banking application (created_by_id references the users above)
+INSERT INTO
     tickets (id, title, description, status, solution, created_by_id)
 VALUES
 (
@@ -29,11 +35,3 @@ VALUES
   'de livraison estimé : 3 à 5 jours ouvrés. Le code PIN précédent a été réactivé sur la nouvelle carte.',
       'd4e5f6a7-b8c9-4d0e-1f2a-3b4c5d6e7f80'
 );
-
--- FAKE DATA for PostgreSQL:
--- Insert 1 user and 1 agent for the banking application
-INSERT INTO
-  users(id, email, password, role)
-VALUES
-    ('d4e5f6a7-b8c9-4d0e-1f2a-3b4c5d6e7f80', 'john.doe@gmail.com', '$2a$10$ZCkYIwrSw8t2mi3klTFKeu9y.jjWABOnWPwbZUlkwTVzc1oQtjGou', 'USER'),
-    ('e5f6a7b8-c9d0-4e1f-2a3b-4c5d6e7f8091', 'agent@company.com', '$2a$10$xtGnHBCYKz3KvMRQmt4fmOplvodVpPxSaE4vL9ijLn4RHFwxZWRBu', 'AGENT');
