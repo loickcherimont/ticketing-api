@@ -167,7 +167,7 @@
 						docker-java client used by Testcontainers 1.21.x negotiates down
 						to 1.32 by default. Pin the API version for the forked test JVM
 						(@{argLine} preserves the JaCoCo agent). -->
-					<argLine>@{argLine} -Dapi.version=1.55</argLine>
+					<argLine>@{argLine} -Dapi.version=1.48</argLine>
 					<includes>
 						<include>**/*Test.java</include>
 						<include>**/*IT.java</include>
