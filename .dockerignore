@@ -11,7 +11,7 @@ target/
 # Git and documentation metadata not needed in the image
 .git/
 .github/
-README.md
+*.md
 LICENSE
 .gitattributes
 docker-compose.yml
