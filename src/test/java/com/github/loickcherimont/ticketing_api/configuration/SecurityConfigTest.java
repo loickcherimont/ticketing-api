@@ -17,7 +17,6 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -27,9 +26,9 @@ import com.github.loickcherimont.ticketing_api.controllers.TicketController;
 import com.github.loickcherimont.ticketing_api.dto.SigninRequestDto;
 import com.github.loickcherimont.ticketing_api.dto.SigninResponseDto;
 import com.github.loickcherimont.ticketing_api.dto.SolutionRequestDto;
+import com.github.loickcherimont.ticketing_api.dto.TicketResponseDto;
 import com.github.loickcherimont.ticketing_api.filter.JwtAuthenticationFilter;
 import com.github.loickcherimont.ticketing_api.models.Role;
-import com.github.loickcherimont.ticketing_api.models.Ticket;
 import com.github.loickcherimont.ticketing_api.models.TicketStatus;
 import com.github.loickcherimont.ticketing_api.models.User;
 import com.github.loickcherimont.ticketing_api.services.AuthService;
@@ -156,7 +155,8 @@ class SecurityConfigTest {
     void solveTicket_asAgent_passesSecurity() throws Exception {
 
         User agent = new User(UUID.randomUUID(), "agent@banque.fr", "password", Role.AGENT);
-        Ticket solved = new Ticket(TICKET_ID, "Title", "Description", TicketStatus.CLOSED, SOLUTION, agent, agent);
+        TicketResponseDto solved = new TicketResponseDto(TICKET_ID, "Title", "Description",
+                TicketStatus.CLOSED, SOLUTION, agent.getEmail(), agent.getEmail());
         when(ticketService.solveTicket(any(UUID.class), any(SolutionRequestDto.class))).thenReturn(solved);
 
         mockMvc.perform(patch("/api/tickets/{id}/solve", TICKET_ID)
