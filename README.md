@@ -184,7 +184,7 @@ Every `push` or `pull_request` to `main` automatically triggers a multi-step pip
    - Packages the executable Spring Boot Fat JAR.
 2. **Quality Gate Enforcement (`jacoco:check`)**:
    - Measures line coverage using **JaCoCo**.
-   - Enforces a minimum **45% line coverage ratio** on core application logic.
+   - Enforces a minimum **90% line coverage ratio** on core application logic.
    - Excludes non-business classes (DTOs and `configuration/*`) from coverage thresholds.
    - Automatically fails the build (`BUILD FAILURE`) if test coverage drops below the required limit.
 3. **Coverage Report Artifact**:
@@ -208,7 +208,7 @@ Every `push` or `pull_request` to `main` automatically triggers a multi-step pip
                     <limit>
                         <counter>LINE</counter>
                         <value>COVEREDRATIO</value>
-                        <minimum>0.45</minimum> <!-- 45% minimum line coverage threshold -->
+                        <minimum>0.90</minimum> <!-- 90% minimum line coverage threshold -->
                     </limit>
                 </limits>
             </rule>

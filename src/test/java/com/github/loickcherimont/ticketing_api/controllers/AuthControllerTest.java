@@ -65,8 +65,8 @@ public class AuthControllerTest {
         // -------------------------------------------------------------------------
 
         @Test
-        @DisplayName("signin: should return HTTP 200 OK for valid request (email, password)")
-        void shouldReturnHttp200WithSigninResponseDto() throws Exception {
+        @DisplayName("POST /api/auth/signin: should return HTTP 200 OK for valid request (email, password)")
+        void signin_withValidCredentials_returns200() throws Exception {
 
                 SigninRequestDto signinRequestDto = new SigninRequestDto(EMAIL, PASSWORD);
 
@@ -93,8 +93,8 @@ public class AuthControllerTest {
         @ParameterizedTest
         @NullAndEmptySource
         @ValueSource(strings = { " ", "\n", "\t", "\r" })
-        @DisplayName("signin: should return HTTP 400 Bad Request when email is blank")
-        void shouldReturnHttp400WhenEmailIsBlank(String email) throws Exception {
+        @DisplayName("POST /api/auth/signin: should return HTTP 400 Bad Request when email is blank")
+        void signin_withBlankEmail_returns400(String email) throws Exception {
                 SigninRequestDto signinRequestDto = new SigninRequestDto(email, "secret-password");
 
                 this.mockMvc.perform(
@@ -107,8 +107,8 @@ public class AuthControllerTest {
         @ParameterizedTest
         @NullAndEmptySource
         @ValueSource(strings = { " ", "\n", "\t", "\r" })
-        @DisplayName("signin: should return HTTP 400 Bad Request when password is blank")
-        void shouldReturnHttp400WhenPasswordIsBlank(String password) throws Exception {
+        @DisplayName("POST /api/auth/signin: should return HTTP 400 Bad Request when password is blank")
+        void signin_withBlankPassword_returns400(String password) throws Exception {
                 SigninRequestDto signinRequestDto = new SigninRequestDto("user@gmail.com", password);
 
                 this.mockMvc.perform(
@@ -120,8 +120,8 @@ public class AuthControllerTest {
 
         @ParameterizedTest(name = "[{index}] email=''{0}'' password=''{1}'' should return HTTP 400 Bad Request")
         @MethodSource("blankInputs")
-        @DisplayName("signin: should return HTTP 400 Bad Request when email and password are blank")
-        void shouldReturnHttp400WhenAllSigninFieldsAreBlank(String email, String password) throws Exception {
+        @DisplayName("POST /api/auth/signin: should return HTTP 400 Bad Request when email and password are blank")
+        void signin_withAllFieldsBlank_returns400(String email, String password) throws Exception {
                 SigninRequestDto signinRequestDto = new SigninRequestDto(email, password);
 
                 this.mockMvc.perform(
@@ -159,8 +159,8 @@ public class AuthControllerTest {
         }
 
         @Test
-        @DisplayName("signin: should return HTTP 401 Unauthorized for invalid credentials (email, password)")
-        void shouldReturnHttp401WhenCredentialsAreInvalid() throws Exception {
+        @DisplayName("POST /api/auth/signin: should return HTTP 401 Unauthorized for invalid credentials (email, password)")
+        void signin_withInvalidCredentials_returns401() throws Exception {
 
                 SigninRequestDto signinRequestDto = new SigninRequestDto("wrong-email@gmail.com", "wrong-password");
 
