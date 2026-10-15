@@ -1,15 +1,34 @@
-# Use the Eclipse temurin alpine official image
-# https://hub.docker.com/_/eclipse-temurin
-FROM eclipse-temurin:21-jdk-alpine
+# ---------------------------------------------------------------------------
+# Build stage: compile the application with the Maven wrapper
+# ---------------------------------------------------------------------------
+FROM eclipse-temurin:21-jdk-alpine AS builder
 
-# Create and change to the app directory.
 WORKDIR /app
 
-# Copy local code to the container image.
-COPY . ./
+# Copy the Maven wrapper and project descriptor first to leverage Docker
+# layer caching between builds.
+COPY mvnw ./
+COPY .mvn/ .mvn/
+COPY pom.xml ./
+COPY src ./src
 
-# Build the app.
-RUN ./mvnw -DoutputFile=target/mvn-dependency-list.log -B -DskipTests clean dependency:list install
+# Package the fat JAR. Tests are intentionally skipped: they are executed by
+# the CI workflow (`mvn verify`) and require more resources in the build image.
+RUN ./mvnw -B -DskipTests package
 
-# Run the app by dynamically finding the JAR file in the target directory
-CMD ["sh", "-c", "java -jar target/*.jar"]
+# ---------------------------------------------------------------------------
+# Runtime stage: minimal JRE image, run as a non-root user
+# ---------------------------------------------------------------------------
+FROM eclipse-temurin:21-jre-alpine
+
+WORKDIR /app
+
+# Non-root user principle of least privilege
+RUN addgroup -S spring && adduser -S spring -G spring
+USER spring:spring
+
+COPY --from=builder /app/target/*.jar app.jar
+
+EXPOSE 8080
+
+ENTRYPOINT ["java", "-jar", "/app/app.jar"]

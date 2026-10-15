@@ -5,13 +5,13 @@ import java.util.UUID;
 
 import com.github.loickcherimont.ticketing_api.dto.SolutionRequestDto;
 import com.github.loickcherimont.ticketing_api.dto.TicketRequestDto;
-import com.github.loickcherimont.ticketing_api.models.Ticket;
+import com.github.loickcherimont.ticketing_api.dto.TicketResponseDto;
 import com.github.loickcherimont.ticketing_api.models.User;
 
 public interface TicketService {
-    List<Ticket> getAllTickets(User user);
-    Ticket getTicketByIdAndCreatedBy(UUID id, User currentUser);
-    Ticket createTicket(TicketRequestDto ticketRequestDto, User currentUser);
-    Ticket solveTicket(UUID id, SolutionRequestDto solutionRequestDto);
-    Ticket setTicketInProgress(UUID id);
+    List<TicketResponseDto> getAllTickets(User user);
+    TicketResponseDto getTicketByIdAndCreatedBy(UUID id, User currentUser);
+    TicketResponseDto createTicket(TicketRequestDto ticketRequestDto, User currentUser);
+    TicketResponseDto solveTicket(UUID id, SolutionRequestDto solutionRequestDto);
+    TicketResponseDto setTicketInProgress(UUID id);
 }

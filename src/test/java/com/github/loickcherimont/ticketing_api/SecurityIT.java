@@ -26,6 +26,15 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
+/**
+ * Integration test verifying the security flow against a real PostgreSQL
+ * container provided by {@link TestcontainersConfiguration}.
+ *
+ * <p>
+ * Boots the full Spring context to prove that sign-in issues a real, usable
+ * JWT and that this JWT grants access to a protected endpoint.
+ * </p>
+ */
 @SpringBootTest
 @AutoConfigureMockMvc
 @Import(TestcontainersConfiguration.class)
