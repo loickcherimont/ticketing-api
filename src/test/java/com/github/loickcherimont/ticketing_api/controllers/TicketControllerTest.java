@@ -109,8 +109,8 @@ public class TicketControllerTest {
 	// -------------------------------------------------------------------------
 
 	@Test
-	@DisplayName("createTicket: should return HTTP 201 Created for authenticated AGENT or USER")
-	void shouldReturnHttp201WithNewCreatedTicket() throws Exception {
+	@DisplayName("POST /api/tickets: should return HTTP 201 Created for authenticated AGENT or USER")
+	void createTicket_asAuthenticatedUser_returns201() throws Exception {
 
 		TicketRequestDto request = new TicketRequestDto(TICKET_TITLE, TICKET_DESCRIPTION);
 		Ticket savedTicket = new Ticket(TICKET_ID, TICKET_TITLE, TICKET_DESCRIPTION, TicketStatus.OPEN, null,
@@ -133,8 +133,8 @@ public class TicketControllerTest {
 	}
 
 	@Test
-	@DisplayName("getAllTickets: should return HTTP 200 OK for authenticated AGENT")
-	void shouldReturnHttp200AndAllTicketsForAuthenticatedAgent() throws Exception {
+	@DisplayName("GET /api/tickets: should return HTTP 200 OK for authenticated AGENT")
+	void getAllTickets_asAgent_returnsAllTickets() throws Exception {
 
 		List<Ticket> tickets = List.of(
 				new Ticket(UUID.fromString("47d57b59-1859-4bba-ad68-b82240492306"),
@@ -168,8 +168,8 @@ public class TicketControllerTest {
 	}
 
 	@Test
-	@DisplayName("getAllTickets: should return HTTP 200 OK for authenticated USER with his tickets only")
-	void shouldReturnHttp200AndAllTicketsCreatedByAuthenticatedUser() throws Exception {
+	@DisplayName("GET /api/tickets: should return HTTP 200 OK for authenticated USER with his tickets only")
+	void getAllTickets_asUser_returnsOwnTickets() throws Exception {
 
 		List<Ticket> tickets = List.of(
 				new Ticket(UUID.fromString("47d57b59-1859-4bba-ad68-b82240492306"),
@@ -196,8 +196,8 @@ public class TicketControllerTest {
 	}
 
 	@Test
-	@DisplayName("getTicketByIdAndCreatedBy: should return HTTP 200 OK for authenticated AGENT or USER")
-	void shouldReturnHttp200AndTicketIfIdExists() throws Exception {
+	@DisplayName("GET /api/tickets/{id}: should return HTTP 200 OK for authenticated AGENT or USER")
+	void getTicketById_asAuthenticatedUser_returns200() throws Exception {
 
 		Ticket ticket = new Ticket(TICKET_ID, TICKET_TITLE, TICKET_DESCRIPTION, TicketStatus.IN_PROGRESS,
 				null, TICKET_CREATED_BY, TICKET_ASSIGNED_TO);
@@ -212,9 +212,9 @@ public class TicketControllerTest {
 	}
 
 	@Test
-	@DisplayName("solveTicket: should return HTTP 200 OK for authenticated AGENT")
+	@DisplayName("PATCH /api/tickets/{id}/solve: should return HTTP 200 OK for authenticated AGENT")
 	@WithMockUser(roles = { "AGENT" })
-	void shouldReturnHttp200WithSolvedAndClosedTicket() throws Exception {
+	void solveTicket_asAgent_returnsSolvedTicket() throws Exception {
 
 		Ticket savedTicket = new Ticket(TICKET_ID, TICKET_TITLE, TICKET_DESCRIPTION, TicketStatus.CLOSED,
 				TICKET_SOLUTION, TICKET_CREATED_BY, TICKET_ASSIGNED_TO);
@@ -234,9 +234,9 @@ public class TicketControllerTest {
 	}
 
 	@Test
-	@DisplayName("setTicketInProgress: should return HTTP 200 OK for authenticated AGENT")
+	@DisplayName("PATCH /api/tickets/{id}/in-progress: should return HTTP 200 OK for authenticated AGENT")
 	@WithMockUser(roles = { "AGENT" })
-	void shouldReturnHttp200WithTicketInProgressStatus() throws Exception {
+	void setTicketInProgress_asAgent_returnsInProgressTicket() throws Exception {
 
 		Ticket savedTicket = new Ticket(TICKET_ID, TICKET_TITLE, TICKET_DESCRIPTION, TicketStatus.IN_PROGRESS,
 				null, TICKET_CREATED_BY, TICKET_ASSIGNED_TO);
@@ -261,16 +261,16 @@ public class TicketControllerTest {
 	class UnauthenticatedUsersTests {
 
 		@Test
-		@DisplayName("getAllTickets: should return HTTP 401 Unauthorized for anonymous AGENT or USER")
-		void shouldReturnHttp401ForAnonymousUsersOnGetAllTicketsRoute() throws Exception {
+		@DisplayName("GET /api/tickets: should return HTTP 401 Unauthorized for anonymous AGENT or USER")
+		void getAllTickets_withoutToken_returns401() throws Exception {
 
 			mockMvc.perform(get("/api/tickets"))
 					.andExpect(status().isUnauthorized());
 		}
 
 		@Test
-		@DisplayName("createTicket: should return HTTP 401 Unauthorized for anonymous AGENT or USER")
-		void shouldReturnHttp401ForAnonymousUsersOnCreateTicketRoute() throws Exception {
+		@DisplayName("POST /api/tickets: should return HTTP 401 Unauthorized for anonymous AGENT or USER")
+		void createTicket_withoutToken_returns401() throws Exception {
 
 			mockMvc.perform(
 					post("/api/tickets")
@@ -280,8 +280,8 @@ public class TicketControllerTest {
 		}
 
 		@Test
-		@DisplayName("solveTicket: should return HTTP 401 Unauthorized for anonymous AGENT")
-		void shouldReturnHttp401ForAnonymousAgentOnSolveTicketRoute() throws Exception {
+		@DisplayName("PATCH /api/tickets/{id}/solve: should return HTTP 401 Unauthorized for anonymous AGENT")
+		void solveTicket_withoutToken_returns401() throws Exception {
 
 			mockMvc.perform(
 					patch("/api/tickets/" + TICKET_ID + "/solve")
@@ -291,8 +291,8 @@ public class TicketControllerTest {
 		}
 
 		@Test
-		@DisplayName("setTicketInProgress: should return HTTP 401 Unauthorized for anonymous AGENT")
-		void shouldReturnHttp401ForAnonymousAgentOnSetTicketInProgressRoute() throws Exception {
+		@DisplayName("PATCH /api/tickets/{id}/in-progress: should return HTTP 401 Unauthorized for anonymous AGENT")
+		void setTicketInProgress_withoutToken_returns401() throws Exception {
 
 			mockMvc.perform(
 					patch("/api/tickets/" + TICKET_ID + "/in-progress"))
@@ -305,9 +305,9 @@ public class TicketControllerTest {
 	class ForbiddenUsersTests {
 
 		@Test
-		@DisplayName("solveTicket: should return HTTP 403 Forbidden for authenticated USER NOT AGENT")
+		@DisplayName("PATCH /api/tickets/{id}/solve: should return HTTP 403 Forbidden for authenticated USER NOT AGENT")
 		@WithMockUser(roles = { "USER" })
-		void shouldReturnHttp403ForUsersNotAgentOnSolveTicketRoute() throws Exception {
+		void solveTicket_asUser_returns403() throws Exception {
 
 			mockMvc.perform(
 					patch("/api/tickets/" + TICKET_ID + "/solve")
@@ -317,9 +317,9 @@ public class TicketControllerTest {
 		}
 
 		@Test
-		@DisplayName("setTicketInProgress: should return HTTP 403 Forbidden for authenticated USER NOT AGENT")
+		@DisplayName("PATCH /api/tickets/{id}/in-progress: should return HTTP 403 Forbidden for authenticated USER NOT AGENT")
 		@WithMockUser(roles = { "USER" })
-		void shouldReturnHttp403ForUsersNotAgentOnSetTicketInProgressRoute() throws Exception {
+		void setTicketInProgress_asUser_returns403() throws Exception {
 
 			mockMvc.perform(
 					patch("/api/tickets/" + TICKET_ID + "/in-progress"))
@@ -329,8 +329,8 @@ public class TicketControllerTest {
 	}
 
 	@Test
-	@DisplayName("getTicketByIdAndCreatedBy: should return HTTP 404 Not Found for authenticated AGENT or USER")
-	void shouldReturnHttp404IfIdNotExists() throws Exception {
+	@DisplayName("GET /api/tickets/{id}: should return HTTP 404 Not Found for authenticated AGENT or USER")
+	void getTicketById_withUnknownId_returns404() throws Exception {
 
 		UUID UNKNOWN_TICKET_ID = UUID.randomUUID();
 
@@ -352,9 +352,9 @@ public class TicketControllerTest {
 	 */
 	@ParameterizedTest(name = "[{index}] title=''{0}'' description=''{1}'' should return HTTP 400 Bad Request")
 	@MethodSource("blankInputs")
-	@DisplayName("createTicket: should return HTTP 400 Bad Request for authenticated AGENT or USER")
+	@DisplayName("POST /api/tickets: should return HTTP 400 Bad Request for authenticated AGENT or USER")
 	@WithMockUser(roles = { "USER", "AGENT" })
-	void shouldReturnHttp400IfNewTicketFieldsAreBlank(String title, String description) throws Exception {
+	void createTicket_withBlankFields_returns400(String title, String description) throws Exception {
 
 		TicketRequestDto badRequestDto = new TicketRequestDto(title, description);
 
@@ -366,9 +366,9 @@ public class TicketControllerTest {
 	}
 
 	@Test
-	@DisplayName("createTicket: should return HTTP 400 Bad Request when title exceeds 100 characters")
+	@DisplayName("POST /api/tickets: should return HTTP 400 Bad Request when title exceeds 100 characters")
 	@WithMockUser(roles = { "USER", "AGENT" })
-	void shouldReturnHttp400WhenTitleExceedsMaxLength() throws Exception {
+	void createTicket_withTooLongTitle_returns400() throws Exception {
 
 		TicketRequestDto badRequestDto = new TicketRequestDto("T".repeat(101), TICKET_DESCRIPTION);
 

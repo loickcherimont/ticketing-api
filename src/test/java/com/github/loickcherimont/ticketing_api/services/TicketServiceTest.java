@@ -76,7 +76,7 @@ class TicketServiceTest {
 
     @Test
     @DisplayName("getAllTickets: should return all tickets for AGENT")
-    void shouldReturnAllTicketsForAgent() {
+    void getAllTickets_asAgent_returnsAllTickets() {
 
         List<Ticket> tickets = List.of(
                 new Ticket(TICKET_ID, TICKET_TITLE, TICKET_DESC, TicketStatus.OPEN, null, TICKET_CREATED_BY, null));
@@ -91,7 +91,7 @@ class TicketServiceTest {
 
     @Test
     @DisplayName("getAllTickets: should return only the current USER tickets")
-    void shouldReturnOnlyTicketsCreatedByCurrentUser() {
+    void getAllTickets_asUser_returnsOwnTickets() {
 
         List<Ticket> tickets = List.of(
                 new Ticket(TICKET_ID, TICKET_TITLE, TICKET_DESC, TicketStatus.OPEN, null, ROLE_USER, null));
@@ -110,7 +110,7 @@ class TicketServiceTest {
 
     @Test
     @DisplayName("getTicketByIdAndCreatedBy: should return ticket for AGENT when identifier exists")
-    void shouldReturnTicketIfIdExistsForAgent() {
+    void getTicketById_asAgent_returnsTicket() {
 
         Ticket ticket = new Ticket(TICKET_ID, TICKET_TITLE, TICKET_DESC, TicketStatus.IN_PROGRESS,
                 null, TICKET_CREATED_BY, TICKET_ASSIGNED_TO);
@@ -126,7 +126,7 @@ class TicketServiceTest {
 
     @Test
     @DisplayName("getTicketByIdAndCreatedBy: should return ticket for USER when he is the owner")
-    void shouldReturnTicketIfCurrentUserIsOwner() {
+    void getTicketById_asOwner_returnsTicket() {
 
         Ticket ticket = new Ticket(TICKET_ID, TICKET_TITLE, TICKET_DESC, TicketStatus.IN_PROGRESS,
                 null, ROLE_USER, TICKET_ASSIGNED_TO);
@@ -142,7 +142,7 @@ class TicketServiceTest {
 
     @Test
     @DisplayName("getTicketByIdAndCreatedBy: should throw TicketNotFoundException for USER not owning the ticket")
-    void shouldThrowTicketNotFoundExceptionWhenCurrentUserDoesNotOwnTicket() {
+    void getTicketById_asNonOwner_throwsTicketNotFoundException() {
 
         UUID NOT_OWNED_TICKET_ID = UUID.randomUUID();
         String notFoundMessage = String.format("Ticket %s introuvable", NOT_OWNED_TICKET_ID);
@@ -162,7 +162,7 @@ class TicketServiceTest {
 
     @Test
     @DisplayName("createTicket: should return created ticket with OPEN status, no solution and current user as creator")
-    void shouldReturnNewCreatedTicket() {
+    void createTicket_returnsNewTicket() {
 
         TicketRequestDto request = new TicketRequestDto(TICKET_TITLE, TICKET_DESC);
 
@@ -187,7 +187,7 @@ class TicketServiceTest {
 
     @Test
     @DisplayName("createTicket: should throw TicketExistingTitleException when title is already used")
-    void shouldThrowTicketExistingTitleExceptionForDuplicateTitle() {
+    void createTicket_withDuplicateTitle_throwsTicketExistingTitleException() {
 
         TicketRequestDto request = new TicketRequestDto(TICKET_TITLE, TICKET_DESC);
 
@@ -206,7 +206,7 @@ class TicketServiceTest {
 
     @Test
     @DisplayName("solveTicket: should return ticket with CLOSED status and trimmed solution")
-    void shouldReturnSolvedTicketWithClosedStatus() {
+    void solveTicket_returnsSolvedTicket() {
 
         Ticket savedTicket = new Ticket(TICKET_ID, TICKET_TITLE, TICKET_DESC, TicketStatus.CLOSED,
                 TICKET_SOLUTION, TICKET_CREATED_BY, TICKET_ASSIGNED_TO);
@@ -233,7 +233,7 @@ class TicketServiceTest {
 
     @Test
     @DisplayName("setTicketInProgress: should return ticket with IN_PROGRESS status and no solution")
-    void shouldReturnTicketWithInProgressStatus() {
+    void setTicketInProgress_returnsInProgressTicket() {
 
         Ticket savedTicket = new Ticket(TICKET_ID, TICKET_TITLE, TICKET_DESC, TicketStatus.IN_PROGRESS,
                 null, TICKET_CREATED_BY, TICKET_ASSIGNED_TO);
@@ -256,7 +256,7 @@ class TicketServiceTest {
 
     @Test
     @DisplayName("getTicketByIdAndCreatedBy: should throw TicketNotFoundException when identifier is unknown")
-    void shouldThrowTicketNotFoundExceptionWhenIdDoesNotExist() {
+    void getTicketById_withUnknownId_throwsTicketNotFoundException() {
 
         UUID UNKNOWN_TICKET_ID = UUID.randomUUID();
         String notFoundMessage = String.format("Ticket %s introuvable", UNKNOWN_TICKET_ID);

@@ -72,7 +72,7 @@ class AuthServiceTest {
 
     @Test
     @DisplayName("signin: should return SigninResponseDto for USER role")
-    void shouldReturnSigninResponseDtoForUserRole() {
+    void signin_asUser_returnsSigninResponseDto() {
 
         SigninRequestDto request = new SigninRequestDto(EMAIL, PASSWORD);
         User user = new User(ID, EMAIL, PASSWORD, Role.USER);
@@ -94,7 +94,7 @@ class AuthServiceTest {
 
     @Test
     @DisplayName("signin: should return SigninResponseDto for AGENT role")
-    void shouldReturnSigninResponseDtoForAgentRole() {
+    void signin_asAgent_returnsSigninResponseDto() {
 
         SigninRequestDto request = new SigninRequestDto(EMAIL, PASSWORD);
         User user = new User(ID, EMAIL, PASSWORD, Role.AGENT);
@@ -120,7 +120,7 @@ class AuthServiceTest {
 
     @Test
     @DisplayName("signin: should throw InvalidCredentialsException when email is not found")
-    void shouldThrowInvalidCredentialsExceptionWhenEmailNotFound() {
+    void signin_withUnknownEmail_throwsInvalidCredentialsException() {
 
         SigninRequestDto request = new SigninRequestDto(EMAIL, PASSWORD);
 
@@ -135,7 +135,7 @@ class AuthServiceTest {
 
     @Test
     @DisplayName("signin: should throw InvalidCredentialsException when password does not match")
-    void shouldThrowInvalidCredentialsExceptionWhenPasswordDoesNotMatch() {
+    void signin_withWrongPassword_throwsInvalidCredentialsException() {
 
         SigninRequestDto request = new SigninRequestDto(EMAIL, "wrong-password");
         User user = new User(ID, EMAIL, PASSWORD, Role.USER);

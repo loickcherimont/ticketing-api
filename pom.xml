@@ -69,7 +69,8 @@
 			<scope>test</scope>
 		</dependency>
 
-		<!-- Source: https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-testcontainers -->
+		<!-- Source:
+		https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-testcontainers -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-testcontainers</artifactId>
@@ -206,7 +207,7 @@
 										<limit>
 											<counter>LINE</counter>
 											<value>COVEREDRATIO</value>
-											<minimum>0.45</minimum>
+											<minimum>0.90</minimum>
 										</limit>
 									</limits>
 								</rule>
