@@ -47,7 +47,8 @@ public class SecurityConfig {
 				.authorizeHttpRequests(auth -> auth
 						.requestMatchers(
 								"/api/tickets/*/solve",
-								"/api/tickets/*/in-progress")
+								"/api/tickets/*/in-progress",
+								"/api/tickets/*/assignee")
 						.hasRole(Role.AGENT.name())
 						.requestMatchers(
 								"/",

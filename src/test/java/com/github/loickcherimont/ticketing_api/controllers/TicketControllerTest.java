@@ -266,6 +266,25 @@ public class TicketControllerTest {
 		verify(ticketService).setTicketInProgress(TICKET_ID);
 	}
 
+	@Test
+	@DisplayName("PATCH /api/tickets/{id}/assignee: should return HTTP 200 OK for authenticated AGENT")
+	void assignTicketIdTo_asAgent_returnsAssignedTicket() throws Exception {
+
+		Ticket assignedTicket = new Ticket(TICKET_ID, TICKET_TITLE, TICKET_DESCRIPTION, TicketStatus.OPEN,
+				null, TICKET_CREATED_BY, TICKET_ASSIGNED_TO);
+
+		when(ticketService.assignTicketIdTo(TICKET_ID, TICKET_ASSIGNED_TO))
+				.thenReturn(TicketResponseDto.from(assignedTicket));
+
+		mockMvc.perform(patch(String.format(BASE_URI + "/%s/assignee", TICKET_ID))
+				.with(user(TICKET_ASSIGNED_TO)))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.id").value(TICKET_ID.toString()))
+				.andExpect(jsonPath("$.assignedToEmail").value(TICKET_ASSIGNED_TO.getEmail()));
+
+		verify(ticketService).assignTicketIdTo(TICKET_ID, TICKET_ASSIGNED_TO);
+	}
+
 	// -------------------------------------------------------------------------
 	// Tests — error scenarios (edge cases)
 	// -------------------------------------------------------------------------
@@ -312,6 +331,15 @@ public class TicketControllerTest {
 					patch("/api/tickets/" + TICKET_ID + "/in-progress"))
 					.andExpect(status().isUnauthorized());
 		}
+
+		@Test
+		@DisplayName("PATCH /api/tickets/{id}/assignee: should return HTTP 401 Unauthorized for anonymous agent")
+		void assignTicketIdTo_withoutToken_returns401() throws Exception {
+
+			mockMvc.perform(
+					patch("/api/tickets/" + TICKET_ID + "/assignee"))
+					.andExpect(status().isUnauthorized());
+		}
 	}
 
 	@Nested
@@ -337,6 +365,16 @@ public class TicketControllerTest {
 
 			mockMvc.perform(
 					patch("/api/tickets/" + TICKET_ID + "/in-progress"))
+					.andExpect(status().isForbidden());
+		}
+
+		@Test
+		@DisplayName("PATCH /api/tickets/{id}/assignee: should return HTTP 403 Forbidden for authenticated USER NOT AGENT")
+		@WithMockUser(roles = { "USER" })
+		void assignTicketIdTo_asUser_returns403() throws Exception {
+
+			mockMvc.perform(
+					patch("/api/tickets/" + TICKET_ID + "/assignee"))
 					.andExpect(status().isForbidden());
 		}
 

@@ -263,6 +263,47 @@ class TicketServiceTest {
     }
 
     // -------------------------------------------------------------------------
+    // Tests — assignTicketIdTo
+    // -------------------------------------------------------------------------
+
+    @Test
+    @DisplayName("assignTicketIdTo: should assign current agent and return ticket with his email")
+    void assignTicketIdTo_assignsCurrentAgent() {
+
+        Ticket unassignedTicket = new Ticket(TICKET_ID, TICKET_TITLE, TICKET_DESC, TicketStatus.OPEN,
+                null, TICKET_CREATED_BY, null);
+
+        when(ticketRepository.findById(TICKET_ID)).thenReturn(Optional.of(unassignedTicket));
+        when(ticketRepository.save(any(Ticket.class))).thenReturn(unassignedTicket);
+
+        TicketResponseDto result = ticketService.assignTicketIdTo(TICKET_ID, AGENT_USER);
+
+        assertThat(result.id()).isEqualTo(TICKET_ID);
+        assertThat(result.assignedToEmail()).isEqualTo(AGENT_USER.getEmail());
+
+        ArgumentCaptor<Ticket> ticketCaptor = ArgumentCaptor.forClass(Ticket.class);
+        verify(ticketRepository).save(ticketCaptor.capture());
+        assertThat(ticketCaptor.getValue().getAssignedTo()).isEqualTo(AGENT_USER);
+        verify(ticketRepository).findById(TICKET_ID);
+    }
+
+    @Test
+    @DisplayName("assignTicketIdTo: should throw TicketNotFoundException when identifier is unknown")
+    void assignTicketIdTo_withUnknownId_throwsTicketNotFoundException() {
+
+        UUID UNKNOWN_TICKET_ID = UUID.randomUUID();
+        String notFoundMessage = String.format("Ticket %s introuvable", UNKNOWN_TICKET_ID);
+
+        when(ticketRepository.findById(UNKNOWN_TICKET_ID)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> ticketService.assignTicketIdTo(UNKNOWN_TICKET_ID, AGENT_USER))
+                .isInstanceOf(TicketNotFoundException.class)
+                .hasMessage(notFoundMessage);
+
+        verify(ticketRepository).findById(UNKNOWN_TICKET_ID);
+    }
+
+    // -------------------------------------------------------------------------
     // Tests — error scenarios (edge cases)
     // -------------------------------------------------------------------------
 
