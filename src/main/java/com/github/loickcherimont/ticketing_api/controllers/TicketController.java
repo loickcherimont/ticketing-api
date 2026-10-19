@@ -132,4 +132,23 @@ public class TicketController {
     public ResponseEntity<TicketResponseDto> setTicketInProgress(@PathVariable UUID id) {
         return ResponseEntity.status(HttpStatus.OK).body(ticketService.setTicketInProgress(id));
     }
+
+    /**
+     * Assign the current authenticated agent to a ticket.
+     *
+     * @param id          ticket identifier
+     * @param currentUser connected agent performing the assignment
+     * @return the updated ticket with {@code assignedToEmail} set to the
+     *         current agent's email, and {@code HTTP 200 OK}
+     */
+    @Operation(summary = "Assign ticket to current agent", description = "Set the authenticated agent as assignee of the target ticket (AGENT role required)")
+    @ApiResponse(responseCode = "200", description = "Ticket assigned to current agent")
+    @ApiResponse(responseCode = "401", description = "Unauthorized - JWT token missing or invalid")
+    @ApiResponse(responseCode = "403", description = "Forbidden - insufficient role (AGENT role required)")
+    @ApiResponse(responseCode = "404", description = "Ticket with specified `id` not found")
+    @PatchMapping("/{id}/assignee")
+    public ResponseEntity<TicketResponseDto> assignTicketIdTo(@PathVariable UUID id,
+            @AuthenticationPrincipal User currentUser) {
+        return ResponseEntity.status(HttpStatus.OK).body(ticketService.assignTicketIdTo(id, currentUser));
+    }
 }

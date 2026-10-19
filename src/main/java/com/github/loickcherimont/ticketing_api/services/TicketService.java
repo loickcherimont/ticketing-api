@@ -14,4 +14,5 @@ public interface TicketService {
     TicketResponseDto createTicket(TicketRequestDto ticketRequestDto, User currentUser);
     TicketResponseDto solveTicket(UUID id, SolutionRequestDto solutionRequestDto);
     TicketResponseDto setTicketInProgress(UUID id);
+    TicketResponseDto assignTicketIdTo(UUID id, User currentUser);
 }

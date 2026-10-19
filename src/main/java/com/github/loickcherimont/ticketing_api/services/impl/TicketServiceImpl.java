@@ -39,7 +39,7 @@ public class TicketServiceImpl implements TicketService {
      * Retrieve a ticket by its ID for AGENT.
      * Retrieve user ticket using ticket id and the current user.
      *
-     * @param id   Ticket identifier
+     * @param id          Ticket identifier
      * @param currentUser Ticket owner
      * @return the ticket, mapped to a {@code TicketResponseDto}, if the current
      *         user owns it
@@ -133,6 +133,27 @@ public class TicketServiceImpl implements TicketService {
     private Ticket findTicketById(UUID id) {
         return ticketRepository.findById(id)
                 .orElseThrow(() -> new TicketNotFoundException("Ticket " + id + " introuvable"));
+    }
+
+    /**
+     * Assign the current agent as assignee of the target ticket and save the
+     * update in the database.
+     *
+     * @param id          Ticket identifier
+     * @param currentUser Connected agent performing the assignment
+     * @return the updated ticket as a {@code TicketResponseDto}, with
+     *         {@code assignedToEmail} set to the current agent's email
+     * @throws TicketNotFoundException if no ticket exists with the given id
+     */
+    @Override
+    @PreAuthorize("hasRole('AGENT')")
+    public TicketResponseDto assignTicketIdTo(UUID id, User currentUser) {
+
+        Ticket ticket = findTicketById(id);
+
+        ticket.setAssignedTo(currentUser);
+
+        return TicketResponseDto.from(ticketRepository.save(ticket));
     }
 
 }
