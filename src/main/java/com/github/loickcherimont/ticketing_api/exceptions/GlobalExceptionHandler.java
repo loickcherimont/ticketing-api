@@ -3,11 +3,14 @@ package com.github.loickcherimont.ticketing_api.exceptions;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import com.github.loickcherimont.ticketing_api.dto.ApiError;
 
@@ -27,6 +30,47 @@ public class GlobalExceptionHandler {
                 .forEach(error -> errors.put(error.getField(), error.getDefaultMessage()));
 
         return buildErrorResponse(HttpStatus.BAD_REQUEST, "La requête n'est pas valide", errors);
+    }
+
+    /**
+     * Handles unreadable or malformed request bodies.
+     *
+     * @param ex Exception
+     * @return ResponseEntity with {@code HTTP 400 Bad Request}
+     */
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ApiError> handleUnreadableMessage(HttpMessageNotReadableException ex) {
+
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, "Le corps de la requête est absent ou mal formé.", null);
+    }
+
+    /**
+     * Handles path or query parameters that cannot be converted to the expected
+     * type (e.g. a malformed {@code UUID}).
+     *
+     * @param ex Exception
+     * @return ResponseEntity with {@code HTTP 400 Bad Request} and the faulty
+     *         parameter name
+     */
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ApiError> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
+
+        Map<String, String> errors = Map.of(ex.getName(), "Valeur invalide");
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, "La requête n'est pas valide", errors);
+    }
+
+    /**
+     * Handles database integrity violations, such as a unique constraint race
+     * condition on the ticket title.
+     *
+     * @param ex Exception
+     * @return ResponseEntity with {@code HTTP 409 Conflict}
+     */
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ApiError> handleDataIntegrityViolation(DataIntegrityViolationException ex) {
+
+        return buildErrorResponse(HttpStatus.CONFLICT,
+                "La ressource existe déjà ou viole une contrainte d'intégrité.", null);
     }
 
     @ExceptionHandler(TicketNotFoundException.class)

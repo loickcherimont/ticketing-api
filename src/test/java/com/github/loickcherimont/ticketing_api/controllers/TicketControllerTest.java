@@ -401,6 +401,18 @@ public class TicketControllerTest {
 		verify(ticketService).getTicketByIdAndCreatedBy(UNKNOWN_TICKET_ID, TICKET_CREATED_BY);
 	}
 
+	@Test
+	@DisplayName("GET /api/tickets/{id}: should return HTTP 400 Bad Request when id is not a valid UUID")
+	void getTicketById_withMalformedId_returns400() throws Exception {
+
+		mockMvc.perform(get(BASE_URI + "/not-a-uuid").with(user(TICKET_CREATED_BY)))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.message").value("La requête n'est pas valide"))
+				.andExpect(jsonPath("$.fieldErrors.id").value("Valeur invalide"));
+
+		verifyNoInteractions(ticketService);
+	}
+
 	/**
 	 * Verifies that creating a ticket with blank fields returns HTTP 400 Bad
 	 * Request.

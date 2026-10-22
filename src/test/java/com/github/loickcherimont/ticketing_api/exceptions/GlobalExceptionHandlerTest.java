@@ -5,9 +5,12 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.util.UUID;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -17,6 +20,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -66,6 +70,16 @@ class GlobalExceptionHandlerTest {
         public void conflict() {
             throw new TicketExistingTitleException("Un ticket avec ce titre existe déjà");
         }
+
+        @GetMapping("/probe/typed/{id}")
+        public void typed(@PathVariable UUID id) {
+            // never reached: the UUID conversion fails first for malformed input
+        }
+
+        @GetMapping("/probe/data-integrity")
+        public void dataIntegrity() {
+            throw new DataIntegrityViolationException("duplicate title");
+        }
     }
 
     record ProbeDto(@NotBlank(message = "ne doit pas être vide") String title) {
@@ -103,6 +117,57 @@ class GlobalExceptionHandlerTest {
                 .andExpect(jsonPath("$.status").value(400))
                 .andExpect(jsonPath("$.message").value("La requête n'est pas valide"))
                 .andExpect(jsonPath("$.fieldErrors.title").value("ne doit pas être vide"));
+    }
+
+    /**
+     * Malformed JSON cannot be deserialized by Jackson, so Spring throws
+     * {@link org.springframework.http.converter.HttpMessageNotReadableException}.
+     * The advice answers 400 with the same {@code ApiError} shape as any other
+     * validation failure.
+     */
+    @Test
+    @DisplayName("POST /probe/validation: should return HTTP 400 when the JSON body is malformed")
+    void validation_withMalformedJson_returns400() throws Exception {
+
+        mockMvc.perform(post("/probe/validation")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{invalid"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.message").value("Le corps de la requête est absent ou mal formé."));
+    }
+
+    /**
+     * A missing request body triggers the same
+     * {@link org.springframework.http.converter.HttpMessageNotReadableException}.
+     */
+    @Test
+    @DisplayName("POST /probe/validation: should return HTTP 400 when the request body is empty")
+    void validation_withEmptyBody_returns400() throws Exception {
+
+        mockMvc.perform(post("/probe/validation")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(""))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.message").value("Le corps de la requête est absent ou mal formé."));
+    }
+
+    /**
+     * A path parameter that cannot be converted (here a malformed UUID) makes
+     * Spring throw
+     * {@link org.springframework.web.method.annotation.MethodArgumentTypeMismatchException}.
+     * The advice answers 400 and names the faulty parameter.
+     */
+    @Test
+    @DisplayName("GET /probe/typed/{id}: should return HTTP 400 for a malformed path parameter")
+    void typeMismatch_returns400() throws Exception {
+
+        mockMvc.perform(get("/probe/typed/not-a-uuid"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.message").value("La requête n'est pas valide"))
+                .andExpect(jsonPath("$.fieldErrors.id").value("Valeur invalide"));
     }
 
     // -------------------------------------------------------------------------
@@ -145,5 +210,21 @@ class GlobalExceptionHandlerTest {
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.status").value(409))
                 .andExpect(jsonPath("$.message").value("Un ticket avec ce titre existe déjà"));
+    }
+
+    /**
+     * A database integrity violation (for instance a unique constraint race on
+     * the ticket title) must surface as {@code 409 Conflict} instead of an
+     * unhandled {@code 500}.
+     */
+    @Test
+    @DisplayName("GET /probe/data-integrity: should return HTTP 409 with a generic message")
+    void dataIntegrityViolation_returns409() throws Exception {
+
+        mockMvc.perform(get("/probe/data-integrity"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.status").value(409))
+                .andExpect(jsonPath("$.message")
+                        .value("La ressource existe déjà ou viole une contrainte d'intégrité."));
     }
 }
