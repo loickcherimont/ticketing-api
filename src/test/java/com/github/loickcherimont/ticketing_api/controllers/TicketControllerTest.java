@@ -3,6 +3,7 @@ package com.github.loickcherimont.ticketing_api.controllers;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -25,12 +26,15 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -60,7 +64,8 @@ import jakarta.servlet.FilterChain;
  * <p>
  * Authenticated requests use {@link SecurityMockMvcRequestPostProcessors#user}
  * so that the {@code principal} is the application {@link User} entity
- * (like the production JWT filter does), making {@code @AuthenticationPrincipal}
+ * (like the production JWT filter does), making
+ * {@code @AuthenticationPrincipal}
  * resolution realistic.
  * </p>
  */
@@ -153,7 +158,8 @@ public class TicketControllerTest {
 						TicketStatus.CLOSED,
 						"Après vérification, le prélèvement a été identifié comme frauduleux et remboursé "
 								+ "intégralement sous 48 heures. Une nouvelle carte bancaire a été émise et envoyée à "
-								+ "l'adresse du client.", TICKET_CREATED_BY, TICKET_ASSIGNED_TO));
+								+ "l'adresse du client.",
+						TICKET_CREATED_BY, TICKET_ASSIGNED_TO));
 
 		List<TicketResponseDto> responseDtos = tickets.stream().map(TicketResponseDto::from).toList();
 
@@ -429,6 +435,31 @@ public class TicketControllerTest {
 						.contentType(MediaType.APPLICATION_JSON)
 						.content(objectMapper.writeValueAsString(badRequestDto)))
 				.andExpect(status().isBadRequest());
+	}
+
+	/**
+	 * Verifies that solving a ticket with a blank solution returns HTTP 400 Bad
+	 * Request without invoking the service.
+	 *
+	 * @param solution blank solution value (null, empty, whitespace)
+	 */
+	@ParameterizedTest(name = "[{index}] solution=''{0}'' should return HTTP 400 Bad Request")
+	@NullAndEmptySource
+	@ValueSource(strings = { "  ", "\t", "\n" })
+	@DisplayName("PATCH /api/tickets/{id}/solve: should return HTTP 400 Bad Request when solution is blank")
+	@WithMockUser(roles = "AGENT")
+	void solveTicket_withBlankSolution_returns400(String solution) throws Exception {
+
+		SolutionRequestDto solutionRequestDto = new SolutionRequestDto(solution);
+
+		this.mockMvc.perform(patch(String.format(BASE_URI + "/%s/solve", TICKET_ID))
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(solutionRequestDto)))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.message").value("La requête n'est pas valide"))
+				.andExpect(jsonPath("$.fieldErrors.solution").exists());
+
+		verifyNoInteractions(ticketService);
 	}
 
 	/**
