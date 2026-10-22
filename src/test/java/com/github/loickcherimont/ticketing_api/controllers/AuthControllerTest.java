@@ -105,6 +105,19 @@ public class AuthControllerTest {
         }
 
         @ParameterizedTest
+        @ValueSource(strings = { "not-an-email", "missing-at-sign.com", "user@" })
+        @DisplayName("POST /api/auth/signin: should return HTTP 400 Bad Request when email format is invalid")
+        void signin_withInvalidEmailFormat_returns400(String email) throws Exception {
+                SigninRequestDto signinRequestDto = new SigninRequestDto(email, "secret-password");
+
+                this.mockMvc.perform(
+                                post(BASE_URI_PATH)
+                                                .contentType(MediaType.APPLICATION_JSON)
+                                                .content(objectMapper.writeValueAsString(signinRequestDto)))
+                                .andExpect(status().isBadRequest());
+        }
+
+        @ParameterizedTest
         @NullAndEmptySource
         @ValueSource(strings = { " ", "\n", "\t", "\r" })
         @DisplayName("POST /api/auth/signin: should return HTTP 400 Bad Request when password is blank")
